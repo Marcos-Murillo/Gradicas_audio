@@ -15,7 +15,6 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Search, Eye, Edit, Trash2, ArrowLeft, Loader2, FileText, Stethoscope, Ear } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
-import { useRef } from "react"
 
 /**
  * Página de evaluaciones guardadas
@@ -42,7 +41,6 @@ export default function SavedEvaluationsPage() {
   const [evaluationToDelete, setEvaluationToDelete] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
-  const reportRef = useRef<HTMLDivElement>(null)
 
   // Cargar evaluaciones al montar el componente
   useEffect(() => {
@@ -132,7 +130,7 @@ export default function SavedEvaluationsPage() {
   }
 
   const handleExportPDF = async () => {
-    if (!selectedEvaluation || !reportRef.current) return
+    if (!selectedEvaluation) return
 
     try {
       setExporting(true)
@@ -141,7 +139,7 @@ export default function SavedEvaluationsPage() {
         description: "Por favor espere mientras se genera el documento...",
       })
 
-      await pdfExportService.exportEvaluationToPDF(selectedEvaluation, reportRef.current)
+      await pdfExportService.exportEvaluationToPDF(selectedEvaluation)
 
       toast({
         title: "PDF generado exitosamente",
@@ -258,7 +256,7 @@ export default function SavedEvaluationsPage() {
             </DialogDescription>
           </DialogHeader>
           {selectedEvaluation && (
-            <div ref={reportRef}>
+            <div>
               <ConsolidatedReport
                 evaluation={selectedEvaluation}
                 onExportPDF={handleExportPDF}
