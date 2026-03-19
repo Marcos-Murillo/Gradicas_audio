@@ -1,65 +1,377 @@
-import Image from "next/image";
+"use client"
+
+import { useState, useRef, useCallback } from "react"
+import { TestSelector } from "@/components/test-selector"
+import { PatientForm } from "@/components/patient-form"
+import { AudiometryForm } from "@/components/audiometry-form"
+import { LogoaudiometryForm } from "@/components/logoaudiometry-form"
+import { TympanometryForm } from "@/components/tympanometry-form"
+import { ExaminerForm } from "@/components/examiner-form"
+import { ConsolidatedReport } from "@/components/consolidated-report"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
+import { Activity, FileText, Loader2, FolderOpen } from "lucide-react"
+import { toast } from "sonner"
+import type {
+  TipoPrueba,
+  Paciente,
+  DatosPrueba,
+  DatosAudiometriaTonal,
+  DatosLogoaudiometria,
+  DatosTimpanometria,
+  Examinador,
+  EvaluacionAuditiva,
+} from "@/types/evaluation"
+import { firebaseService } from "@/lib/firebase-service"
+import { pdfExportService } from "@/lib/pdf-export"
+import { evaluacionAuditivaSchema } from "@/lib/validation-schemas"
+import { useRouter } from "next/navigation"
 
 export default function Home() {
+  const router = useRouter()
+  
+  // Test selection state
+  const [selectedTests, setSelectedTests] = useState<TipoPrueba[]>([])
+
+  // Form data state
+  const [patientData, setPatientData] = useState<Paciente | null>(null)
+  const [audiometryData, setAudiometryData] = useState<DatosAudiometriaTonal | null>(null)
+  const [logoaudiometryData, setLogoaudiometryData] = useState<DatosLogoaudiometria | null>(null)
+  const [tympanometryData, setTympanometryData] = useState<DatosTimpanometria | null>(null)
+  const [examinerData, setExaminerData] = useState<Examinador | null>(null)
+
+  // UI state
+  const [showReport, setShowReport] = useState(false)
+  const [generatedEvaluation, setGeneratedEvaluation] = useState<EvaluacionAuditiva | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Test selection handlers
+  const handleAddTest = (test: TipoPrueba) => {
+    if (selectedTests.length < 3 && !selectedTests.includes(test)) {
+      setSelectedTests([...selectedTests, test])
+    }
+  }
+
+  const handleRemoveTest = (test: TipoPrueba) => {
+    setSelectedTests(selectedTests.filter((t) => t !== test))
+    // Clear data for removed test
+    if (test === 'tonal') setAudiometryData(null)
+    if (test === 'logoaudiometria') setLogoaudiometryData(null)
+    if (test === 'timpanometria') setTympanometryData(null)
+  }
+
+  // Form submission handlers with useCallback to prevent re-renders
+  const handlePatientSubmit = useCallback((data: Paciente) => {
+    setPatientData(data)
+  }, [])
+
+  const handleAudiometrySubmit = useCallback((data: DatosAudiometriaTonal) => {
+    setAudiometryData(data)
+  }, [])
+
+  const handleLogoaudiometrySubmit = useCallback((data: DatosLogoaudiometria) => {
+    setLogoaudiometryData(data)
+  }, [])
+
+  const handleTympanometrySubmit = useCallback((data: DatosTimpanometria) => {
+    setTympanometryData(data)
+  }, [])
+
+  const handleExaminerSubmit = useCallback((data: Examinador) => {
+    setExaminerData(data)
+  }, [])
+
+  // Validation: Check if all required data is complete
+  const isDataComplete = (): boolean => {
+    // Must have at least one test selected
+    if (selectedTests.length === 0) return false
+
+    // Must have patient data
+    if (!patientData) return false
+
+    // Must have examiner data
+    if (!examinerData) return false
+
+    // Must have data for all selected tests
+    if (selectedTests.includes('tonal') && !audiometryData) return false
+    if (selectedTests.includes('logoaudiometria') && !logoaudiometryData) return false
+    if (selectedTests.includes('timpanometria') && !tympanometryData) return false
+
+    return true
+  }
+
+  // Generate consolidated report
+  const handleGenerateReport = async () => {
+    if (!isDataComplete()) {
+      toast.error("Por favor complete todos los campos requeridos")
+      return
+    }
+
+    // Build pruebas array based on selected tests
+    const pruebas: DatosPrueba[] = []
+    if (selectedTests.includes('tonal') && audiometryData) {
+      pruebas.push(audiometryData)
+    }
+    if (selectedTests.includes('logoaudiometria') && logoaudiometryData) {
+      pruebas.push(logoaudiometryData)
+    }
+    if (selectedTests.includes('timpanometria') && tympanometryData) {
+      pruebas.push(tympanometryData)
+    }
+
+    // Create evaluation object
+    const evaluation: EvaluacionAuditiva = {
+      paciente: patientData!,
+      pruebas,
+      examinador: examinerData!,
+      fechaExamen: new Date(),
+    }
+
+    // Validate with Zod schema
+    const validationResult = evaluacionAuditivaSchema.safeParse(evaluation)
+    if (!validationResult.success) {
+      console.error("Validation errors:", validationResult.error)
+      toast.error("Error de validación. Por favor revise los datos ingresados.")
+      return
+    }
+
+    // Save to Firebase automatically
+    setIsSaving(true)
+    try {
+      const id = await firebaseService.saveEvaluation(evaluation)
+      evaluation.id = id
+      setGeneratedEvaluation(evaluation)
+      setShowReport(true)
+      toast.success("Informe generado y guardado exitosamente")
+    } catch (error) {
+      console.error("Error saving evaluation:", error)
+      toast.error("Error al guardar la evaluación")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Export to PDF - captura las gráficas del reporte visible
+  const handleExportPDF = async () => {
+    if (!generatedEvaluation) {
+      console.error('No evaluation to export');
+      toast.error("No hay evaluación para exportar");
+      return;
+    }
+
+    try {
+      toast.info("Capturando gráficas...");
+      
+      // Capturar las gráficas que ya están renderizadas en el DOM
+      const { chartToImageService } = await import('@/lib/chart-to-image');
+      const images: {
+        audiometry?: string;
+        logoaudiometry?: string;
+        tympanometry?: string;
+      } = {};
+
+      // Buscar y capturar cada gráfica del DOM
+      const chartContainers = document.querySelectorAll('[data-chart-type]');
+      
+      for (const container of Array.from(chartContainers)) {
+        const chartType = container.getAttribute('data-chart-type');
+        const chartElement = container as HTMLElement;
+        
+        try {
+          if (chartType === 'audiometry') {
+            images.audiometry = await chartToImageService.convertToBase64(chartElement, 800, 400);
+          } else if (chartType === 'logoaudiometry') {
+            images.logoaudiometry = await chartToImageService.convertToBase64(chartElement, 800, 400);
+          } else if (chartType === 'tympanometry') {
+            images.tympanometry = await chartToImageService.convertToBase64(chartElement, 800, 400);
+          }
+        } catch (error) {
+          console.error(`Error capturing ${chartType} chart:`, error);
+        }
+      }
+
+      console.log('Charts captured:', {
+        hasAudiometry: !!images.audiometry,
+        hasLogoaudiometry: !!images.logoaudiometry,
+        hasTympanometry: !!images.tympanometry,
+      });
+
+      // Generar PDF con las imágenes capturadas
+      await pdfExportService.exportEvaluationToPDF(generatedEvaluation, images);
+      toast.success("PDF exportado exitosamente");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Error al exportar el PDF");
+    }
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700">
+              <Activity className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold leading-tight text-foreground">
+                Sistema Evaluación Auditiva
+              </h1>
+              <p className="text-xs text-muted-foreground">
+                Universidad del Valle
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/saved")}
+              className="gap-2"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <FolderOpen className="h-4 w-4" />
+              Evaluaciones Guardadas
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      {/* Main content */}
+      <main className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
+        <div className="flex flex-col gap-8">
+          {/* Test Selector */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Nueva Evaluación Auditiva</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TestSelector
+                selectedTests={selectedTests}
+                onAddTest={handleAddTest}
+                onRemoveTest={handleRemoveTest}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Patient Form - Always visible */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Datos del Paciente</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PatientForm
+                onSubmit={handlePatientSubmit}
+                initialData={patientData || undefined}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Test Forms - Conditional rendering */}
+          {selectedTests.includes('tonal') && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Audiometría Tonal</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AudiometryForm
+                  onSubmit={handleAudiometrySubmit}
+                  initialData={audiometryData || undefined}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {selectedTests.includes('logoaudiometria') && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Logoaudiometría</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <LogoaudiometryForm
+                  onSubmit={handleLogoaudiometrySubmit}
+                  initialData={logoaudiometryData || undefined}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {selectedTests.includes('timpanometria') && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Timpanometría</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TympanometryForm
+                  onSubmit={handleTympanometrySubmit}
+                  initialData={tympanometryData || undefined}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Examiner Form - Always visible */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Datos del Examinador</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ExaminerForm
+                onSubmit={handleExaminerSubmit}
+                initialData={examinerData || undefined}
+              />
+            </CardContent>
+          </Card>
+
+          <Separator />
+
+          {/* Generate Report Button */}
+          <div className="flex justify-center">
+            <Button
+              onClick={handleGenerateReport}
+              disabled={!isDataComplete() || isSaving}
+              size="lg"
+              className="gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:from-blue-700 hover:to-blue-900 px-8"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <FileText className="h-5 w-5" />
+                  GENERAR INFORME COMPLETO
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </main>
+
+      {/* Consolidated Report Modal */}
+      <Dialog open={showReport} onOpenChange={setShowReport}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Informe Consolidado</DialogTitle>
+          </DialogHeader>
+          {generatedEvaluation && (
+            <ConsolidatedReport
+              evaluation={generatedEvaluation}
+              onExportPDF={handleExportPDF}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Footer */}
+      <footer className="mt-12 border-t border-border bg-card/50 px-4 py-6 text-center text-xs text-muted-foreground lg:px-8">
+        Sistema de Evaluación Auditiva Profesional &mdash; Universidad del Valle
+      </footer>
     </div>
-  );
+  )
 }
