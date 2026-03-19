@@ -154,53 +154,18 @@ export default function Home() {
     }
   }
 
-  // Export to PDF - captura las gráficas del reporte visible
+  // Export to PDF
   const handleExportPDF = async () => {
     if (!generatedEvaluation) {
-      console.error('No evaluation to export');
       toast.error("No hay evaluación para exportar");
       return;
     }
 
     try {
-      toast.info("Capturando gráficas...");
-      
-      // Capturar las gráficas que ya están renderizadas en el DOM
-      const { chartToImageService } = await import('@/lib/chart-to-image');
-      const images: {
-        audiometry?: string;
-        logoaudiometry?: string;
-        tympanometry?: string;
-      } = {};
+      toast.info("Generando PDF...");
 
-      // Buscar y capturar cada gráfica del DOM
-      const chartContainers = document.querySelectorAll('[data-chart-type]');
-      
-      for (const container of Array.from(chartContainers)) {
-        const chartType = container.getAttribute('data-chart-type');
-        const chartElement = container as HTMLElement;
-        
-        try {
-          if (chartType === 'audiometry') {
-            images.audiometry = await chartToImageService.convertToBase64(chartElement, 800, 400);
-          } else if (chartType === 'logoaudiometry') {
-            images.logoaudiometry = await chartToImageService.convertToBase64(chartElement, 800, 400);
-          } else if (chartType === 'tympanometry') {
-            images.tympanometry = await chartToImageService.convertToBase64(chartElement, 800, 400);
-          }
-        } catch (error) {
-          console.error(`Error capturing ${chartType} chart:`, error);
-        }
-      }
-
-      console.log('Charts captured:', {
-        hasAudiometry: !!images.audiometry,
-        hasLogoaudiometry: !!images.logoaudiometry,
-        hasTympanometry: !!images.tympanometry,
-      });
-
-      // Generar PDF con las imágenes capturadas
-      await pdfExportService.exportEvaluationToPDF(generatedEvaluation, images);
+      // Generar PDF
+      await pdfExportService.exportEvaluationToPDF(generatedEvaluation);
       toast.success("PDF exportado exitosamente");
     } catch (error) {
       console.error("Error exporting PDF:", error);
