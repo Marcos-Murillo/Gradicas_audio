@@ -9,14 +9,7 @@ import type { EvaluacionAuditiva } from '@/types/evaluation';
  * Requirements: 12.1-12.8
  */
 export interface PDFExportService {
-  exportEvaluationToPDF(
-    evaluation: EvaluacionAuditiva,
-    chartImages?: {
-      audiometry?: string;
-      logoaudiometry?: string;
-      tympanometry?: string;
-    }
-  ): Promise<void>;
+  exportEvaluationToPDF(evaluation: EvaluacionAuditiva): Promise<void>;
 }
 
 /**
@@ -41,21 +34,8 @@ export class ReactPDFExportService implements PDFExportService {
    * 
    * Requirements: 12.1-12.8
    */
-  async exportEvaluationToPDF(
-    evaluation: EvaluacionAuditiva,
-    chartImages?: {
-      audiometry?: string;
-      logoaudiometry?: string;
-      tympanometry?: string;
-    }
-  ): Promise<void> {
+  async exportEvaluationToPDF(evaluation: EvaluacionAuditiva): Promise<void> {
     try {
-      console.log('Generating PDF with chart images:', {
-        hasAudiometry: !!chartImages?.audiometry,
-        hasLogoaudiometry: !!chartImages?.logoaudiometry,
-        hasTympanometry: !!chartImages?.tympanometry,
-      });
-
       // Generar el documento PDF usando @react-pdf/renderer
       const blob = await pdf(
         <PDFDocument evaluation={evaluation} />
