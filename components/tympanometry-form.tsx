@@ -110,8 +110,7 @@ export function TympanometryForm({ onSubmit, initialData }: TympanometryFormProp
   });
 
   const form = useForm<DatosTimpanometria>({
-    // @ts-ignore
-    resolver: zodResolver(timpanometriaSchema),
+    resolver: zodResolver(timpanometriaSchema) as any,
     defaultValues: initialData || {
       tipo: 'timpanometria',
       derecho: { tipoCurva: undefined, presionPico: undefined, cumplimiento: undefined },
