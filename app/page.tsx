@@ -86,21 +86,25 @@ export default function Home() {
 
   // Validation: Check if all required data is complete
   const isDataComplete = (): boolean => {
-    // Must have at least one test selected
     if (selectedTests.length === 0) return false
-
-    // Must have patient data
     if (!patientData) return false
-
-    // Must have examiner data
     if (!examinerData) return false
-
-    // Must have data for all selected tests
     if (selectedTests.includes('tonal') && !audiometryData) return false
     if (selectedTests.includes('logoaudiometria') && !logoaudiometryData) return false
     if (selectedTests.includes('timpanometria') && !tympanometryData) return false
-
     return true
+  }
+
+  // Returns a human-readable list of what's still missing
+  const getMissingFields = (): string[] => {
+    const missing: string[] = []
+    if (selectedTests.length === 0) missing.push("Selecciona al menos una prueba")
+    if (!patientData) missing.push("Datos del paciente")
+    if (selectedTests.includes('tonal') && !audiometryData) missing.push("Audiometría Tonal (completa al menos 4 frecuencias por oído y pierde el foco)")
+    if (selectedTests.includes('logoaudiometria') && !logoaudiometryData) missing.push("Logoaudiometría")
+    if (selectedTests.includes('timpanometria') && !tympanometryData) missing.push("Timpanometría")
+    if (!examinerData) missing.push("Datos del examinador")
+    return missing
   }
 
   // Generate consolidated report
@@ -295,12 +299,12 @@ export default function Home() {
           <Separator />
 
           {/* Generate Report Button */}
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-3">
             <Button
               onClick={handleGenerateReport}
-              disabled={!isDataComplete() || isSaving}
+              disabled={isSaving}
               size="lg"
-              className="gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:from-blue-700 hover:to-blue-900 px-8"
+              className="gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:from-blue-700 hover:to-blue-900 px-8 disabled:opacity-50"
             >
               {isSaving ? (
                 <>
@@ -314,6 +318,15 @@ export default function Home() {
                 </>
               )}
             </Button>
+            {!isDataComplete() && getMissingFields().length > 0 && (
+              <ul className="text-xs text-muted-foreground text-center space-y-0.5">
+                {getMissingFields().map((msg, i) => (
+                  <li key={i} className="flex items-center gap-1 justify-center">
+                    <span className="text-amber-500">●</span> {msg}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </main>

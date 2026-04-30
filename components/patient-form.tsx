@@ -61,8 +61,8 @@ export function PatientForm({ onSubmit, initialData }: PatientFormProps) {
     },
   });
 
-  // Submit on blur - more stable than onChange
-  const handleBlur = React.useCallback(() => {
+  // Submit on change - updates parent state immediately on any field change
+  const handleChange = React.useCallback(() => {
     const values = form.getValues();
     const result = pacienteSchema.safeParse(values);
     if (result.success) {
@@ -72,7 +72,7 @@ export function PatientForm({ onSubmit, initialData }: PatientFormProps) {
 
   return (
     <Form {...form}>
-      <div className="space-y-6" onBlur={handleBlur}>
+      <div className="space-y-6" onChange={handleChange}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Campo Apellido */}
           <FormField
@@ -149,7 +149,7 @@ export function PatientForm({ onSubmit, initialData }: PatientFormProps) {
                     <Calendar
                       mode="single"
                       selected={field.value}
-                      onSelect={field.onChange}
+                      onSelect={(date) => { field.onChange(date); handleChange(); }}
                       disabled={(date) =>
                         date > new Date() || date < new Date("1900-01-01")
                       }
@@ -168,7 +168,7 @@ export function PatientForm({ onSubmit, initialData }: PatientFormProps) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sexo *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={(v) => { field.onChange(v); handleChange(); }} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger
                       className={cn(

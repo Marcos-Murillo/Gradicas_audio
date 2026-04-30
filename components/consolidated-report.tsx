@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { AudiometryAudiogram } from "@/components/audiometry-audiogram"
 import { LogoaudiometryChartUI } from "@/components/logoaudiometry-chart-ui"
 import { TympanometryChartUI } from "@/components/tympanometry-chart-ui"
+import { ReflexGridUI } from "@/components/reflex-grid-ui"
 import type { EvaluacionAuditiva, DatosAudiometriaTonal, DatosLogoaudiometria, DatosTimpanometria } from "@/types/evaluation"
 
 interface ConsolidatedReportProps {
@@ -207,17 +208,23 @@ function LogoaudiometrySection({ data, index }: { data: DatosLogoaudiometria; in
       <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="font-semibold mb-2">SRT (Umbral de Reconocimiento Verbal):</p>
+            <p className="font-semibold mb-2">Oído Derecho (OD):</p>
             <div className="space-y-1 text-sm">
-              <p className="text-red-600">OD: {data.srt.derecho} dB</p>
-              <p className="text-blue-600">OI: {data.srt.izquierdo} dB</p>
+              {data.puntos.derecho.map(p => (
+                <p key={p.db} className="text-red-600">
+                  {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
+                </p>
+              ))}
             </div>
           </div>
           <div>
-            <p className="font-semibold mb-2">SDS (Discriminación Máxima):</p>
+            <p className="font-semibold mb-2">Oído Izquierdo (OI):</p>
             <div className="space-y-1 text-sm">
-              <p className="text-red-600">OD: {data.sds.derecho}%</p>
-              <p className="text-blue-600">OI: {data.sds.izquierdo}%</p>
+              {data.puntos.izquierdo.map(p => (
+                <p key={p.db} className="text-blue-600">
+                  {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
+                </p>
+              ))}
             </div>
           </div>
         </div>
@@ -240,31 +247,44 @@ function TympanometrySection({ data, index }: { data: DatosTimpanometria; index:
       <h3 className="text-xl font-semibold text-blue-700">
         {index}. Timpanometría
       </h3>
-      
+
       {/* Datos numéricos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
         <div>
           <p className="font-semibold text-red-600 mb-2">Oído Derecho (OD):</p>
           <div className="space-y-1 text-sm">
-            <p>Tipo de Curva: {data.derecho.tipoCurva}</p>
+            <p>Tipo de Curva: <strong>{data.derecho.tipoCurva}</strong></p>
             <p>Presión Pico: {data.derecho.presionPico} daPa</p>
             <p>Cumplimiento: {data.derecho.cumplimiento} ml</p>
+            {data.derecho.volumenCanalExterno !== undefined && (
+              <p>Vol. Canal Ext.: {data.derecho.volumenCanalExterno} ml</p>
+            )}
           </div>
         </div>
         <div>
           <p className="font-semibold text-blue-600 mb-2">Oído Izquierdo (OI):</p>
           <div className="space-y-1 text-sm">
-            <p>Tipo de Curva: {data.izquierdo.tipoCurva}</p>
+            <p>Tipo de Curva: <strong>{data.izquierdo.tipoCurva}</strong></p>
             <p>Presión Pico: {data.izquierdo.presionPico} daPa</p>
             <p>Cumplimiento: {data.izquierdo.cumplimiento} ml</p>
+            {data.izquierdo.volumenCanalExterno !== undefined && (
+              <p>Vol. Canal Ext.: {data.izquierdo.volumenCanalExterno} ml</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Gráfica */}
+      {/* Timpanograma */}
       <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border" data-chart-type="tympanometry">
         <TympanometryChartUI data={data} />
       </div>
+
+      {/* Reflejos acústicos */}
+      {data.reflejos && (
+        <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border">
+          <ReflexGridUI data={data} />
+        </div>
+      )}
     </div>
   )
 }

@@ -28,6 +28,22 @@ export interface FirebaseService {
 }
 
 /**
+ * Recursively removes all undefined values from an object.
+ * Firestore does not accept undefined — only null or omitted fields.
+ */
+function removeUndefined(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(removeUndefined)
+  if (obj !== null && typeof obj === "object" && !(obj instanceof Timestamp) && !(obj instanceof Date)) {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, v]) => v !== undefined)
+        .map(([k, v]) => [k, removeUndefined(v)])
+    )
+  }
+  return obj
+}
+
+/**
  * Firestore implementation of the Firebase service
  * Handles all CRUD operations for evaluaciones auditivas
  */
@@ -69,11 +85,12 @@ export class FirestoreService implements FirebaseService {
    */
   async saveEvaluation(evaluation: EvaluacionAuditiva): Promise<string> {
     try {
-      const docRef = await addDoc(collection(db, this.collection), {
+      const data = removeUndefined({
         ...this.convertDatesToTimestamps(evaluation),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       })
+      const docRef = await addDoc(collection(db, this.collection), data)
       
       toast({
         title: "Éxito",
@@ -99,10 +116,10 @@ export class FirestoreService implements FirebaseService {
   async updateEvaluation(id: string, evaluation: EvaluacionAuditiva): Promise<void> {
     try {
       const docRef = doc(db, this.collection, id)
-      await updateDoc(docRef, {
+      await updateDoc(docRef, removeUndefined({
         ...this.convertDatesToTimestamps(evaluation),
         updatedAt: serverTimestamp(),
-      })
+      }))
       
       toast({
         title: "Éxito",

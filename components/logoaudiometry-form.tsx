@@ -1,224 +1,202 @@
 "use client";
 
-import React from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
+import React, { useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { logoaudiometriaSchema } from "@/lib/validation-schemas";
-import type { DatosLogoaudiometria } from "@/types/evaluation";
+import type { DatosLogoaudiometria, PuntoLogoaudiometria } from "@/types/evaluation";
 
-/**
- * Props para el componente LogoaudiometryForm
- */
 export interface LogoaudiometryFormProps {
   onSubmit: (data: DatosLogoaudiometria) => void;
   initialData?: DatosLogoaudiometria;
 }
 
-/**
- * Componente LogoaudiometryForm
- * 
- * Captura datos de logoaudiometría (reconocimiento verbal) para ambos oídos.
- * Utiliza React Hook Form + Zod para validación.
- * 
- * Campos:
- * - SRT (Speech Reception Threshold): Umbral de recepción del habla en dB
- * - SDS (Speech Discrimination Score): Puntuación de discriminación del habla en %
- * 
- * Valida: Requirements 4.1-4.8
- */
-export function LogoaudiometryForm({ onSubmit, initialData }: LogoaudiometryFormProps) {
-  const form = useForm<DatosLogoaudiometria>({
-    // @ts-ignore - Type compatibility issue between zod versions
-    resolver: zodResolver(logoaudiometriaSchema),
-    defaultValues: initialData || {
-      tipo: 'logoaudiometria',
-      srt: {
-        derecho: undefined,
-        izquierdo: undefined,
-      },
-      sds: {
-        derecho: undefined,
-        izquierdo: undefined,
-      },
-    },
-  });
+const TOTAL = 10; // total de palabras presentadas por nivel
 
-  // Submit on blur
-  const handleBlur = React.useCallback(() => {
-    const values = form.getValues();
-    const result = logoaudiometriaSchema.safeParse(values);
-    if (result.success) {
-      onSubmit(result.data);
+function calcPct(correctas: number) {
+  return Math.round((correctas / TOTAL) * 100);
+}
+
+interface EarTableProps {
+  label: string;
+  color: string;
+  puntos: PuntoLogoaudiometria[];
+  onChange: (puntos: PuntoLogoaudiometria[]) => void;
+}
+
+function EarTable({ label, color, puntos, onChange }: EarTableProps) {
+  const [newDb, setNewDb] = useState<string>("");
+  const [newCorrectas, setNewCorrectas] = useState<string>("");
+  const [error, setError] = useState<string>("");
+
+  const addRow = () => {
+    const db = Number(newDb);
+    const correctas = Number(newCorrectas);
+    if (newDb === "" || isNaN(db)) { setError("Ingresa un nivel en dB"); return; }
+    if (newCorrectas === "" || isNaN(correctas) || correctas < 0 || correctas > 10) {
+      setError("Correctas debe ser entre 0 y 10"); return;
     }
-  }, [form, onSubmit]);
+    if (puntos.some(p => p.db === db)) { setError(`Ya existe un punto para ${db} dB`); return; }
+    setError("");
+    onChange([...puntos, { db, correctas }].sort((a, b) => a.db - b.db));
+    setNewDb("");
+    setNewCorrectas("");
+  };
+
+  const removeRow = (db: number) => onChange(puntos.filter(p => p.db !== db));
+
+  const updateRow = (db: number, correctas: number) => {
+    onChange(puntos.map(p => p.db === db ? { ...p, correctas } : p));
+  };
 
   return (
-    <Form {...form}>
-      <div className="space-y-6" onBlur={handleBlur}>
-        {/* SRT - Speech Reception Threshold */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">SRT - Umbral de Recepción del Habla</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* SRT Oído Derecho */}
-            <FormField
-              control={form.control}
-              name="srt.derecho"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SRT Oído Derecho (OD) *</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        placeholder="Ingrese valor"
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === '' ? undefined : Number(value));
-                        }}
-                        className={cn(
-                          "pr-10",
-                          form.formState.errors.srt?.derecho && "border-red-500"
-                        )}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        dB
-                      </span>
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-red-500" />
-                </FormItem>
-              )}
-            />
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold" style={{ color }}>{label}</h3>
 
-            {/* SRT Oído Izquierdo */}
-            <FormField
-              control={form.control}
-              name="srt.izquierdo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SRT Oído Izquierdo (OI) *</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        placeholder="Ingrese valor"
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === '' ? undefined : Number(value));
-                        }}
-                        className={cn(
-                          "pr-10",
-                          form.formState.errors.srt?.izquierdo && "border-red-500"
-                        )}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        dB
-                      </span>
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-red-500" />
-                </FormItem>
-              )}
-            />
-          </div>
+      {/* Table */}
+      {puntos.length > 0 && (
+        <div className="rounded-md border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium">Nivel (dB)</th>
+                <th className="px-3 py-2 text-left font-medium">Correctas / {TOTAL}</th>
+                <th className="px-3 py-2 text-left font-medium">% Discriminación</th>
+                <th className="px-3 py-2 w-10" />
+              </tr>
+            </thead>
+            <tbody>
+              {puntos.map((p) => (
+                <tr key={p.db} className="border-t">
+                  <td className="px-3 py-2 font-mono">{p.db} dB</td>
+                  <td className="px-3 py-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={p.correctas}
+                      onChange={(e) => {
+                        const v = Number(e.target.value);
+                        if (!isNaN(v) && v >= 0 && v <= 10) updateRow(p.db, v);
+                      }}
+                      className="h-7 w-20 text-sm"
+                    />
+                  </td>
+                  <td className="px-3 py-2 font-semibold" style={{ color }}>
+                    {calcPct(p.correctas)}%
+                  </td>
+                  <td className="px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => removeRow(p.db)}
+                      className="text-muted-foreground hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      )}
 
-        {/* SDS - Speech Discrimination Score */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">SDS - Puntuación de Discriminación del Habla</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* SDS Oído Derecho */}
-            <FormField
-              control={form.control}
-              name="sds.derecho"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SDS Oído Derecho (OD) *</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        placeholder="Ingrese valor"
-                        min={0}
-                        max={100}
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === '' ? undefined : Number(value));
-                        }}
-                        className={cn(
-                          "pr-10",
-                          form.formState.errors.sds?.derecho && "border-red-500"
-                        )}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        %
-                      </span>
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-red-500" />
-                </FormItem>
-              )}
-            />
-
-            {/* SDS Oído Izquierdo */}
-            <FormField
-              control={form.control}
-              name="sds.izquierdo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SDS Oído Izquierdo (OI) *</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        placeholder="Ingrese valor"
-                        min={0}
-                        max={100}
-                        {...field}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          field.onChange(value === '' ? undefined : Number(value));
-                        }}
-                        className={cn(
-                          "pr-10",
-                          form.formState.errors.sds?.izquierdo && "border-red-500"
-                        )}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                        %
-                      </span>
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-red-500" />
-                </FormItem>
-              )}
-            />
-          </div>
+      {/* Add row */}
+      <div className="flex items-end gap-2">
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Nivel (dB)</label>
+          <Input
+            type="number"
+            placeholder="ej. 40"
+            value={newDb}
+            onChange={(e) => setNewDb(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addRow()}
+            className="h-8 w-24 text-sm"
+          />
         </div>
-
-        <p className="text-sm text-muted-foreground">
-          * Todos los campos son requeridos. SDS debe estar entre 0 y 100%.
-        </p>
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">Correctas (0–10)</label>
+          <Input
+            type="number"
+            min={0}
+            max={10}
+            placeholder="ej. 7"
+            value={newCorrectas}
+            onChange={(e) => setNewCorrectas(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addRow()}
+            className="h-8 w-28 text-sm"
+          />
+        </div>
+        {newDb && newCorrectas && (
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">% calculado</label>
+            <div className="h-8 flex items-center px-2 text-sm font-semibold" style={{ color }}>
+              {calcPct(Number(newCorrectas))}%
+            </div>
+          </div>
+        )}
+        <Button type="button" size="sm" variant="outline" onClick={addRow} className="h-8 gap-1">
+          <Plus size={14} /> Agregar
+        </Button>
       </div>
-    </Form>
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+export function LogoaudiometryForm({ onSubmit, initialData }: LogoaudiometryFormProps) {
+  const [puntosOD, setPuntosOD] = useState<PuntoLogoaudiometria[]>(
+    initialData?.puntos.derecho ?? []
+  );
+  const [puntosOI, setPuntosOI] = useState<PuntoLogoaudiometria[]>(
+    initialData?.puntos.izquierdo ?? []
+  );
+
+  const trySubmit = (od: PuntoLogoaudiometria[], oi: PuntoLogoaudiometria[]) => {
+    const data: DatosLogoaudiometria = {
+      tipo: 'logoaudiometria',
+      puntos: { derecho: od, izquierdo: oi },
+    };
+    const result = logoaudiometriaSchema.safeParse(data);
+    if (result.success) onSubmit(result.data);
+  };
+
+  const handleODChange = (pts: PuntoLogoaudiometria[]) => {
+    setPuntosOD(pts);
+    trySubmit(pts, puntosOI);
+  };
+
+  const handleOIChange = (pts: PuntoLogoaudiometria[]) => {
+    setPuntosOI(pts);
+    trySubmit(puntosOD, pts);
+  };
+
+  return (
+    <div className="space-y-6">
+      <p className="text-xs text-muted-foreground">
+        Por cada nivel de intensidad, ingresa cuántas palabras repitió correctamente el paciente (de {TOTAL}).
+        El porcentaje de discriminación se calcula automáticamente.
+      </p>
+
+      <EarTable
+        label="Oído Derecho (OD)"
+        color="#dc2626"
+        puntos={puntosOD}
+        onChange={handleODChange}
+      />
+
+      <EarTable
+        label="Oído Izquierdo (OI)"
+        color="#2563eb"
+        puntos={puntosOI}
+        onChange={handleOIChange}
+      />
+
+      <p className="text-xs text-muted-foreground">
+        * Se requiere al menos un nivel por oído. Agrega los niveles en el orden que prefieras, se ordenan automáticamente por dB.
+      </p>
+    </div>
   );
 }

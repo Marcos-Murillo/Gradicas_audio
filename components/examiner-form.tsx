@@ -44,8 +44,8 @@ export function ExaminerForm({ onSubmit, initialData }: ExaminerFormProps) {
     },
   });
 
-  // Submit on blur
-  const handleBlur = React.useCallback(() => {
+  // Submit on change
+  const handleChange = React.useCallback(() => {
     const values = form.getValues();
     const result = examinadorSchema.safeParse(values);
     if (result.success) {
@@ -55,7 +55,7 @@ export function ExaminerForm({ onSubmit, initialData }: ExaminerFormProps) {
 
   return (
     <Form {...form}>
-      <div className="space-y-6" onBlur={handleBlur}>
+      <div className="space-y-6" onChange={handleChange}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Campo Nombre */}
           <FormField

@@ -1,16 +1,21 @@
 "use client"
 
 import type { DatosLogoaudiometria } from "@/types/evaluation"
-import { generateSigmoidCurve } from "@/lib/chart-generators"
 import { CoordinateLineChart } from "@/components/coordinate-line-chart"
 import type { Coordinate } from "@/components/coordinate-line-chart"
 
-export function LogoaudiometryChartUI({ data }: { data: DatosLogoaudiometria }) {
-  const curveOD = generateSigmoidCurve(data.srt.derecho, data.sds.derecho)
-  const curveOI = generateSigmoidCurve(data.srt.izquierdo, data.sds.izquierdo)
+function calcPct(correctas: number) {
+  return Math.round((correctas / 10) * 100);
+}
 
-  const coordinatesOD: Coordinate[] = curveOD.map((p) => ({ x: p.db, y: p.percentage }))
-  const coordinatesOI: Coordinate[] = curveOI.map((p) => ({ x: p.db, y: p.percentage }))
+export function LogoaudiometryChartUI({ data }: { data: DatosLogoaudiometria }) {
+  const coordinatesOD: Coordinate[] = data.puntos.derecho
+    .map(p => ({ x: p.db, y: calcPct(p.correctas) }))
+    .sort((a, b) => a.x - b.x);
+
+  const coordinatesOI: Coordinate[] = data.puntos.izquierdo
+    .map(p => ({ x: p.db, y: calcPct(p.correctas) }))
+    .sort((a, b) => a.x - b.x);
 
   return (
     <CoordinateLineChart
@@ -21,7 +26,7 @@ export function LogoaudiometryChartUI({ data }: { data: DatosLogoaudiometria }) 
       yMinValue={0}
       yMaxValue={100}
       legendNames={["OD (Oído Derecho)", "OI (Oído Izquierdo)"]}
-      coordinateNames={{ x: "Intensidad (dB)", y: "Reconocimiento (%)" }}
+      coordinateNames={{ x: "Intensidad (dB)", y: "Discriminación (%)" }}
       colors={["#dc2626", "#2563eb"]}
       coordinates={[coordinatesOD, coordinatesOI]}
     />

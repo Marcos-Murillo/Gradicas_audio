@@ -291,14 +291,20 @@ function LogoaudiometryPDFSection({
       <Text style={styles.testTitle}>{index}. Logoaudiometría</Text>
       <View style={styles.dataGrid}>
         <View style={styles.dataColumn}>
-          <Text style={styles.earTitle}>SRT (Umbral de Reconocimiento Verbal):</Text>
-          <Text style={[styles.dataItem, styles.earTitleRight]}>OD: {data.srt.derecho} dB</Text>
-          <Text style={[styles.dataItem, styles.earTitleLeft]}>OI: {data.srt.izquierdo} dB</Text>
+          <Text style={styles.earTitle}>Oído Derecho (OD):</Text>
+          {data.puntos.derecho.map(p => (
+            <Text key={p.db} style={[styles.dataItem, styles.earTitleRight]}>
+              {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
+            </Text>
+          ))}
         </View>
         <View style={styles.dataColumn}>
-          <Text style={styles.earTitle}>SDS (Discriminación Máxima):</Text>
-          <Text style={[styles.dataItem, styles.earTitleRight]}>OD: {data.sds.derecho}%</Text>
-          <Text style={[styles.dataItem, styles.earTitleLeft]}>OI: {data.sds.izquierdo}%</Text>
+          <Text style={styles.earTitle}>Oído Izquierdo (OI):</Text>
+          {data.puntos.izquierdo.map(p => (
+            <Text key={p.db} style={[styles.dataItem, styles.earTitleLeft]}>
+              {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
+            </Text>
+          ))}
         </View>
       </View>
     </View>
