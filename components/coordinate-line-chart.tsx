@@ -61,8 +61,8 @@ export function CoordinateLineChart({
     parseFloat((yMin + (i / 6) * (yMax - yMin)).toFixed(2))
   )
 
-  const legendItemW = 170
-  const legendStartX = PAD.left + (plotW - legendNames.length * legendItemW) / 2
+  const legendItemW = Math.min(140, Math.max(80, plotW / Math.max(legendNames.length, 1)))
+  const legendStartX = PAD.left + Math.max(0, (plotW - legendNames.length * legendItemW) / 2)
 
   return (
     <div style={{ width: "100%" }}>
@@ -98,19 +98,36 @@ export function CoordinateLineChart({
         {/* Series lines */}
         {coordinates.map((series, i) => {
           const pts = series
-            .filter((p) => p.x >= xMin && p.x <= xMax)
+            .filter((p) => p.x >= xMin && p.x <= xMax && !Number.isNaN(p.x) && !Number.isNaN(p.y))
             .sort((a, b) => a.x - b.x)
           if (pts.length < 2) return null
           const d = pts
             .map((p, j) => `${j === 0 ? "M" : "L"} ${toSvgX(p.x).toFixed(2)} ${toSvgY(p.y).toFixed(2)}`)
             .join(" ")
           return (
-            <path key={i} d={d} fill="none"
+            <path key={`line-${i}`} d={d} fill="none"
               stroke={colors[i] ?? "#888"} strokeWidth={2.5}
               strokeLinejoin="round" strokeLinecap="round"
             />
           )
         })}
+
+        {/* Data point markers */}
+        {coordinates.map((series, i) =>
+          series
+            .filter((p) => p.x >= xMin && p.x <= xMax && !Number.isNaN(p.x) && !Number.isNaN(p.y))
+            .map((p, j) => (
+              <circle
+                key={`pt-${i}-${j}`}
+                cx={toSvgX(p.x)}
+                cy={toSvgY(p.y)}
+                r={4.5}
+                fill={colors[i] ?? "#888"}
+                stroke="white"
+                strokeWidth={1}
+              />
+            ))
+        )}
 
         {/* X ticks + labels */}
         {xTicks.map((x) => (

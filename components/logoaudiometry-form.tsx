@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { logoaudiometriaSchema } from "@/lib/validation-schemas";
+import { LogoaudiometryChartUI } from "@/components/logoaudiometry-chart-ui";
 import type { DatosLogoaudiometria, PuntoLogoaudiometria } from "@/types/evaluation";
 
 export interface LogoaudiometryFormProps {
@@ -153,11 +154,30 @@ export function LogoaudiometryForm({ onSubmit, initialData }: LogoaudiometryForm
   const [puntosOI, setPuntosOI] = useState<PuntoLogoaudiometria[]>(
     initialData?.puntos.izquierdo ?? []
   );
+  const [showEnmascarada, setShowEnmascarada] = useState<boolean>(
+    !!(initialData?.puntos.derecho_enmascarado?.length || initialData?.puntos.izquierdo_enmascarado?.length)
+  );
+  const [puntosODm, setPuntosODm] = useState<PuntoLogoaudiometria[]>(
+    initialData?.puntos.derecho_enmascarado ?? []
+  );
+  const [puntosOIm, setPuntosOIm] = useState<PuntoLogoaudiometria[]>(
+    initialData?.puntos.izquierdo_enmascarado ?? []
+  );
 
-  const trySubmit = (od: PuntoLogoaudiometria[], oi: PuntoLogoaudiometria[]) => {
+  const trySubmit = (
+    od: PuntoLogoaudiometria[],
+    oi: PuntoLogoaudiometria[],
+    odm: PuntoLogoaudiometria[],
+    oim: PuntoLogoaudiometria[]
+  ) => {
     const data: DatosLogoaudiometria = {
       tipo: 'logoaudiometria',
-      puntos: { derecho: od, izquierdo: oi },
+      puntos: {
+        derecho: od,
+        izquierdo: oi,
+        derecho_enmascarado: odm.length ? odm : undefined,
+        izquierdo_enmascarado: oim.length ? oim : undefined,
+      },
     };
     const result = logoaudiometriaSchema.safeParse(data);
     if (result.success) onSubmit(result.data);
@@ -165,12 +185,22 @@ export function LogoaudiometryForm({ onSubmit, initialData }: LogoaudiometryForm
 
   const handleODChange = (pts: PuntoLogoaudiometria[]) => {
     setPuntosOD(pts);
-    trySubmit(pts, puntosOI);
+    trySubmit(pts, puntosOI, puntosODm, puntosOIm);
   };
 
   const handleOIChange = (pts: PuntoLogoaudiometria[]) => {
     setPuntosOI(pts);
-    trySubmit(puntosOD, pts);
+    trySubmit(puntosOD, pts, puntosODm, puntosOIm);
+  };
+
+  const handleODmChange = (pts: PuntoLogoaudiometria[]) => {
+    setPuntosODm(pts);
+    trySubmit(puntosOD, puntosOI, pts, puntosOIm);
+  };
+
+  const handleOImChange = (pts: PuntoLogoaudiometria[]) => {
+    setPuntosOIm(pts);
+    trySubmit(puntosOD, puntosOI, puntosODm, pts);
   };
 
   return (
@@ -194,9 +224,52 @@ export function LogoaudiometryForm({ onSubmit, initialData }: LogoaudiometryForm
         onChange={handleOIChange}
       />
 
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={() => setShowEnmascarada(v => !v)}
+          className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {showEnmascarada ? "Ocultar" : "Mostrar"} Logo enmascarada (opcional)
+        </button>
+
+        {showEnmascarada && (
+          <div className="space-y-6 pl-4 border-l-2 border-muted">
+            <EarTable
+              label="OD Enmascarada"
+              color="rgba(220,38,38,0.8)"
+              puntos={puntosODm}
+              onChange={handleODmChange}
+            />
+            <EarTable
+              label="OI Enmascarada"
+              color="rgba(37,99,235,0.8)"
+              puntos={puntosOIm}
+              onChange={handleOImChange}
+            />
+          </div>
+        )}
+      </div>
+
       <p className="text-xs text-muted-foreground">
         * Se requiere al menos un nivel por oído. Agrega los niveles en el orden que prefieras, se ordenan automáticamente por dB.
       </p>
+
+      {puntosOD.length > 0 && puntosOI.length > 0 && (
+        <div className="rounded-lg border bg-white dark:bg-gray-900 p-4">
+          <LogoaudiometryChartUI
+            data={{
+              tipo: "logoaudiometria",
+              puntos: {
+                derecho: puntosOD,
+                izquierdo: puntosOI,
+                derecho_enmascarado: puntosODm.length ? puntosODm : undefined,
+                izquierdo_enmascarado: puntosOIm.length ? puntosOIm : undefined,
+              },
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

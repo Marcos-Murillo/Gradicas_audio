@@ -148,7 +148,7 @@ export function ConsolidatedReport({ evaluation, onExportPDF }: ConsolidatedRepo
  * Sección de audiometría tonal
  */
 function AudiometrySection({ data, index }: { data: DatosAudiometriaTonal; index: number }) {
-  const frequencies = ['250', '500', '1000', '2000', '4000', '8000'] as const
+  const frequencies = ['250', '500', '1000', '2000', '3000', '4000'] as const
 
   return (
     <div className="space-y-4">
@@ -205,7 +205,7 @@ function LogoaudiometrySection({ data, index }: { data: DatosLogoaudiometria; in
       </h3>
       
       {/* Datos numéricos */}
-      <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg space-y-3">
+      <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="font-semibold mb-2">Oído Derecho (OD):</p>
@@ -228,6 +228,31 @@ function LogoaudiometrySection({ data, index }: { data: DatosLogoaudiometria; in
             </div>
           </div>
         </div>
+
+        {(data.puntos.derecho_enmascarado?.length || data.puntos.izquierdo_enmascarado?.length) && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
+            <div>
+              <p className="font-semibold mb-2">OD Enmascarada:</p>
+              <div className="space-y-1 text-sm">
+                {(data.puntos.derecho_enmascarado ?? []).map(p => (
+                  <p key={`odm-${p.db}`} className="text-red-600/80">
+                    {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
+                  </p>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="font-semibold mb-2">OI Enmascarada:</p>
+              <div className="space-y-1 text-sm">
+                {(data.puntos.izquierdo_enmascarado ?? []).map(p => (
+                  <p key={`oim-${p.db}`} className="text-blue-600/80">
+                    {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Gráfica */}

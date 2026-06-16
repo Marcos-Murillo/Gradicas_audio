@@ -167,7 +167,7 @@ export function usePDFExport({ title, patient, columnA, columnB, rows }: UsePDFE
           margin: { left: margin, right: margin },
         })
 
-        // @ts-ignore
+        // @ts-expect-error - jsPDF-Autotable augments jsPDF instance
         currentY = pdf.lastAutoTable.finalY + 10
 
         // Add statistics

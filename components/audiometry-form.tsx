@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import type { Path, UseFormReturn } from "react-hook-form";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { audiometriaTonalSchema } from "@/lib/validation-schemas";
 import type { DatosAudiometriaTonal, FrecuenciasAudiometry } from "@/types/evaluation";
 
@@ -29,11 +29,9 @@ const FREQUENCIES = [
   { value: '500', label: '500 Hz' },
   { value: '1000', label: '1000 Hz' },
   { value: '2000', label: '2000 Hz' },
+  { value: '3000', label: '3000 Hz' },
   { value: '4000', label: '4000 Hz' },
-  { value: '8000', label: '8000 Hz' },
 ] as const;
-
-type FreqKey = keyof FrecuenciasAudiometry;
 
 /** Renders a row of 6 frequency inputs for a given field prefix */
 function FrequencyRow({
@@ -43,7 +41,7 @@ function FrequencyRow({
   color,
   symbol,
 }: {
-  form: any;
+  form: UseFormReturn<DatosAudiometriaTonal>;
   prefix: string;
   label: string;
   color: string;
@@ -60,7 +58,7 @@ function FrequencyRow({
           <FormField
             key={`${prefix}.${freq.value}`}
             control={form.control}
-            name={`${prefix}.${freq.value}` as any}
+            name={`${prefix}.${freq.value}` as unknown as Path<DatosAudiometriaTonal>}
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs">{freq.label}</FormLabel>
@@ -70,7 +68,7 @@ function FrequencyRow({
                       type="number"
                       placeholder="dB"
                       {...field}
-                      value={field.value ?? ''}
+                      value={typeof field.value === "number" ? field.value : ""}
                       onChange={(e) => {
                         const v = e.target.value;
                         field.onChange(v === '' ? undefined : Number(v));
@@ -92,9 +90,10 @@ function FrequencyRow({
   );
 }
 
-function cleanFreqs(obj: any): Partial<FrecuenciasAudiometry> | undefined {
+function cleanFreqs(obj: unknown): Partial<FrecuenciasAudiometry> | undefined {
   if (!obj) return undefined;
-  const entries = Object.entries(obj).filter(([_, v]) => v !== undefined && v !== '');
+  if (typeof obj !== "object") return undefined;
+  const entries = Object.entries(obj as Record<string, unknown>).filter(([_, v]) => v !== undefined && v !== '');
   return entries.length > 0 ? Object.fromEntries(entries) as Partial<FrecuenciasAudiometry> : undefined;
 }
 
@@ -103,7 +102,6 @@ export function AudiometryForm({ onSubmit, initialData }: AudiometryFormProps) {
   const [showEnmascarado, setShowEnmascarado] = useState(false);
 
   const form = useForm<DatosAudiometriaTonal>({
-    // @ts-ignore
     resolver: zodResolver(audiometriaTonalSchema),
     defaultValues: initialData || {
       tipo: 'tonal',
@@ -162,12 +160,18 @@ export function AudiometryForm({ onSubmit, initialData }: AudiometryFormProps) {
             symbol={<svg width={14} height={14}><line x1={3} y1={3} x2={11} y2={11} stroke="#2563eb" strokeWidth={2.5} strokeLinecap="round" /><line x1={11} y1={3} x2={3} y2={11} stroke="#2563eb" strokeWidth={2.5} strokeLinecap="round" /></svg>}
           />
 
-          {(form.formState.errors.oido_derecho as any)?.root && (
-            <p className="text-sm text-red-500">{(form.formState.errors.oido_derecho as any).root.message}</p>
-          )}
-          {(form.formState.errors.oido_izquierdo as any)?.root && (
-            <p className="text-sm text-red-500">{(form.formState.errors.oido_izquierdo as any).root.message}</p>
-          )}
+          {(() => {
+            type RootErr = { root?: { message?: string } }
+            const odMsg = (form.formState.errors.oido_derecho as unknown as RootErr | undefined)?.root?.message
+            if (!odMsg) return null
+            return <p className="text-sm text-red-500">{odMsg}</p>
+          })()}
+          {(() => {
+            type RootErr = { root?: { message?: string } }
+            const oiMsg = (form.formState.errors.oido_izquierdo as unknown as RootErr | undefined)?.root?.message
+            if (!oiMsg) return null
+            return <p className="text-sm text-red-500">{oiMsg}</p>
+          })()}
           <p className="text-xs text-muted-foreground">* Se requieren al menos 4 frecuencias por oído</p>
         </div>
 

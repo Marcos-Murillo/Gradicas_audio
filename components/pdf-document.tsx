@@ -248,7 +248,7 @@ export function PDFDocument({ evaluation }: PDFDocumentProps) {
 
 // Sección de datos de Audiometría Tonal para PDF
 function AudiometryDataSection({ data }: { data: DatosAudiometriaTonal }) {
-  const frequencies = ['250', '500', '1000', '2000', '4000', '8000'] as const;
+  const frequencies = ['250', '500', '1000', '2000', '3000', '4000'] as const;
 
   return (
     <View style={styles.dataGrid}>
@@ -307,6 +307,27 @@ function LogoaudiometryPDFSection({
           ))}
         </View>
       </View>
+
+      {(data.puntos.derecho_enmascarado?.length || data.puntos.izquierdo_enmascarado?.length) && (
+        <View style={styles.dataGrid}>
+          <View style={styles.dataColumn}>
+            <Text style={styles.earTitle}>OD Enmascarada:</Text>
+            {(data.puntos.derecho_enmascarado ?? []).map(p => (
+              <Text key={`odm-${p.db}`} style={[styles.dataItem, styles.earTitleRight]}>
+                {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
+              </Text>
+            ))}
+          </View>
+          <View style={styles.dataColumn}>
+            <Text style={styles.earTitle}>OI Enmascarada:</Text>
+            {(data.puntos.izquierdo_enmascarado ?? []).map(p => (
+              <Text key={`oim-${p.db}`} style={[styles.dataItem, styles.earTitleLeft]}>
+                {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
+              </Text>
+            ))}
+          </View>
+        </View>
+      )}
     </View>
   );
 }

@@ -100,7 +100,7 @@ export async function generatePDF(options: GeneratePDFOptions) {
     margin: { left: margin, right: margin },
   })
 
-  // @ts-ignore
+  // @ts-expect-error - jsPDF-Autotable augments jsPDF instance
   const finalY = pdf.lastAutoTable.finalY || currentY + 50
 
   // Statistics
@@ -141,9 +141,7 @@ export async function generatePDFFromChart(chart: ChartDocument, chartRef?: HTML
 
   if (chartRef) {
     try {
-      // @ts-ignore
-      const domtoimage = await import("dom-to-image-more")
-      // @ts-ignore
+      const { default: domtoimage } = await import("dom-to-image-more")
       chartImageData = await domtoimage.toPng(chartRef, {
         quality: 1,
         bgcolor: "#ffffff",

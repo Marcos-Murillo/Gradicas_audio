@@ -4,7 +4,6 @@ import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -36,7 +35,6 @@ export interface ExaminerFormProps {
  */
 export function ExaminerForm({ onSubmit, initialData }: ExaminerFormProps) {
   const form = useForm<Examinador>({
-    // @ts-ignore - Type compatibility issue between zod versions
     resolver: zodResolver(examinadorSchema),
     defaultValues: initialData || {
       nombre: "",

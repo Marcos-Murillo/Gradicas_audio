@@ -51,7 +51,6 @@ export interface PatientFormProps {
  */
 export function PatientForm({ onSubmit, initialData }: PatientFormProps) {
   const form = useForm<Paciente>({
-    // @ts-ignore - Type compatibility issue between zod versions
     resolver: zodResolver(pacienteSchema),
     defaultValues: initialData || {
       apellido: "",

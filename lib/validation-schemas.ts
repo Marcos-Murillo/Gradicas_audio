@@ -29,8 +29,8 @@ export const frecuenciasSchema = z.object({
   '500': z.number().optional(),
   '1000': z.number().optional(),
   '2000': z.number().optional(),
+  '3000': z.number().optional(),
   '4000': z.number().optional(),
-  '8000': z.number().optional(),
 }).refine(
   (data) => {
     const completedCount = Object.values(data).filter(v => v !== undefined).length;
@@ -45,8 +45,8 @@ export const frecuenciasOpcionalesSchema = z.object({
   '500': z.number().optional(),
   '1000': z.number().optional(),
   '2000': z.number().optional(),
+  '3000': z.number().optional(),
   '4000': z.number().optional(),
-  '8000': z.number().optional(),
 }).optional();
 
 /**
@@ -84,6 +84,14 @@ export const logoaudiometriaSchema = z.object({
       db: z.number({ required_error: 'Nivel dB requerido' }),
       correctas: z.number().min(0).max(10, 'Máximo 10 palabras'),
     })).min(1, 'Se requiere al menos un nivel para OI'),
+    derecho_enmascarado: z.array(z.object({
+      db: z.number({ required_error: 'Nivel dB requerido' }),
+      correctas: z.number().min(0).max(10, 'Máximo 10 palabras'),
+    })).min(1, 'Se requiere al menos un nivel para OD enmascarado').optional(),
+    izquierdo_enmascarado: z.array(z.object({
+      db: z.number({ required_error: 'Nivel dB requerido' }),
+      correctas: z.number().min(0).max(10, 'Máximo 10 palabras'),
+    })).min(1, 'Se requiere al menos un nivel para OI enmascarado').optional(),
   }),
 });
 
@@ -93,7 +101,7 @@ const reflejosFreqSchema = z.object({
   '1000': umbralReflejoSchema,
   '2000': umbralReflejoSchema,
   '4000': umbralReflejoSchema,
-}).optional();
+});
 
 /**
  * Schema para validar datos de timpanometría
@@ -101,13 +109,13 @@ const reflejosFreqSchema = z.object({
 export const timpanometriaSchema = z.object({
   tipo: z.literal('timpanometria'),
   derecho: z.object({
-    tipoCurva: z.enum(['A', 'B', 'C', 'As', 'Ad'], { required_error: 'Tipo de curva OD es requerido' }),
+    tipoCurva: z.enum(['A', 'B', 'C', 'P'], { required_error: 'Tipo de curva OD es requerido' }),
     presionPico: z.number({ required_error: 'Presión pico OD es requerida' }),
     cumplimiento: z.number({ required_error: 'Cumplimiento OD es requerido' }).positive('Cumplimiento debe ser positivo'),
     volumenCanalExterno: z.number().optional(),
   }),
   izquierdo: z.object({
-    tipoCurva: z.enum(['A', 'B', 'C', 'As', 'Ad'], { required_error: 'Tipo de curva OI es requerido' }),
+    tipoCurva: z.enum(['A', 'B', 'C', 'P'], { required_error: 'Tipo de curva OI es requerido' }),
     presionPico: z.number({ required_error: 'Presión pico OI es requerida' }),
     cumplimiento: z.number({ required_error: 'Cumplimiento OI es requerido' }).positive('Cumplimiento debe ser positivo'),
     volumenCanalExterno: z.number().optional(),

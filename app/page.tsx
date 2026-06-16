@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useCallback } from "react"
 import { TestSelector } from "@/components/test-selector"
 import { PatientForm } from "@/components/patient-form"
 import { AudiometryForm } from "@/components/audiometry-form"
@@ -110,7 +110,12 @@ export default function Home() {
   // Generate consolidated report
   const handleGenerateReport = async () => {
     if (!isDataComplete()) {
-      toast.error("Por favor complete todos los campos requeridos")
+      const missing = getMissingFields()
+      toast.error(
+        missing.length > 0
+          ? `Faltan datos:\n- ${missing.join("\n- ")}`
+          : "Por favor complete todos los campos requeridos"
+      )
       return
     }
 

@@ -5,26 +5,31 @@ import type { DatosAudiometriaTonal, FrecuenciasAudiometry } from '@/types/evalu
 const styles = StyleSheet.create({
   container: { marginVertical: 8 },
   title: { fontSize: 11, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 },
-  chartsRow: { flexDirection: 'row', gap: 6 },
-  chartWrapper: { flex: 1 },
-  chartLabel: { fontSize: 9, fontWeight: 'bold', textAlign: 'center', marginBottom: 2 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 4 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   legendText: { fontSize: 6.5 },
 });
 
-const W = 230, H = 200;
-const PAD = { top: 10, right: 10, bottom: 32, left: 36 };
+const W = 460;
+const H = 280;
+const PAD = { top: 14, right: 16, bottom: 40, left: 44 };
 const PLOT_W = W - PAD.left - PAD.right;
 const PLOT_H = H - PAD.top - PAD.bottom;
-const FREQS = [250, 500, 1000, 2000, 4000, 8000];
+const FREQS = [250, 500, 1000, 2000, 3000, 4000];
 const DB_MAX = 130;
 const DB_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130];
 
+const COLOR_OD = '#cc0000';
+const COLOR_OI = '#0000cc';
+const OD_OFFSET = 4;
+const OI_OFFSET = -4;
+
 function toX(freq: number) {
-  return PAD.left + ((Math.log10(freq) - Math.log10(250)) / (Math.log10(8000) - Math.log10(250))) * PLOT_W;
+  return PAD.left + ((Math.log10(freq) - Math.log10(250)) / (Math.log10(4000) - Math.log10(250))) * PLOT_W;
 }
 function toY(db: number) { return PAD.top + (db / DB_MAX) * PLOT_H; }
+function cxOD(freq: number) { return toX(freq) + OD_OFFSET; }
+function cxOI(freq: number) { return toX(freq) + OI_OFFSET; }
 
 type EarData = Partial<FrecuenciasAudiometry>;
 function pts(data: EarData | undefined) {
@@ -32,108 +37,96 @@ function pts(data: EarData | undefined) {
   return FREQS.map(f => ({ f, v: data[String(f) as keyof FrecuenciasAudiometry] }))
     .filter((p): p is { f: number; v: number } => p.v !== undefined);
 }
-function pathD(points: { f: number; v: number }[]) {
+function pathD(points: { f: number; v: number }[], xOffset: number) {
   if (points.length < 2) return null;
-  return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(p.f).toFixed(1)} ${toY(p.v).toFixed(1)}`).join(' ');
+  return points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${(toX(p.f) + xOffset).toFixed(1)} ${toY(p.v).toFixed(1)}`).join(' ');
 }
 
 // ─── ASHA Symbols for PDF ────────────────────────────────────────────────────
 
-/** O — OD vía aérea sin enmascarar */
-function PdfO({ cx, cy, color }: { cx: number; cy: number; color: string }) {
-  return <Circle cx={cx} cy={cy} r={4.5} stroke={color} strokeWidth={1.5} fill="none" />;
+function PdfO({ cx, cy }: { cx: number; cy: number }) {
+  return <Circle cx={cx} cy={cy} r={4.5} stroke={COLOR_OD} strokeWidth={1.5} fill="none" />;
 }
 
-/** X — OI vía aérea sin enmascarar */
-function PdfX({ cx, cy, color }: { cx: number; cy: number; color: string }) {
+function PdfX({ cx, cy }: { cx: number; cy: number }) {
   const h = 4.5;
   return (
     <G>
-      <Line x1={cx - h} y1={cy - h} x2={cx + h} y2={cy + h} stroke={color} strokeWidth={1.8} />
-      <Line x1={cx + h} y1={cy - h} x2={cx - h} y2={cy + h} stroke={color} strokeWidth={1.8} />
+      <Line x1={cx - h} y1={cy - h} x2={cx + h} y2={cy + h} stroke={COLOR_OI} strokeWidth={1.8} />
+      <Line x1={cx + h} y1={cy - h} x2={cx - h} y2={cy + h} stroke={COLOR_OI} strokeWidth={1.8} />
     </G>
   );
 }
 
-/** △ — OD vía aérea enmascarada */
-function PdfTriangle({ cx, cy, color }: { cx: number; cy: number; color: string }) {
+function PdfTriangle({ cx, cy }: { cx: number; cy: number }) {
   const r = 5.5;
-  const pts = `${cx},${cy - r} ${cx + r * 0.866},${cy + r * 0.5} ${cx - r * 0.866},${cy + r * 0.5}`;
-  return <Polygon points={pts} stroke={color} strokeWidth={1.5} fill="none" />;
+  const polyPts = `${cx},${cy - r} ${cx + r * 0.866},${cy + r * 0.5} ${cx - r * 0.866},${cy + r * 0.5}`;
+  return <Polygon points={polyPts} stroke={COLOR_OD} strokeWidth={1.5} fill="none" />;
 }
 
-/** □ — OI vía aérea enmascarada */
-function PdfSquare({ cx, cy, color }: { cx: number; cy: number; color: string }) {
+function PdfSquare({ cx, cy }: { cx: number; cy: number }) {
   const s = 4.5;
-  return <Rect x={cx - s} y={cy - s} width={s * 2} height={s * 2} stroke={color} strokeWidth={1.5} fill="none" />;
+  return <Rect x={cx - s} y={cy - s} width={s * 2} height={s * 2} stroke={COLOR_OI} strokeWidth={1.5} fill="none" />;
 }
 
-/** < — OD vía ósea sin enmascarar */
-function PdfAngleLeft({ cx, cy, color }: { cx: number; cy: number; color: string }) {
+function PdfAngleLeft({ cx, cy }: { cx: number; cy: number }) {
   const s = 5;
   return (
     <G>
-      <Line x1={cx + s} y1={cy - s} x2={cx - s} y2={cy} stroke={color} strokeWidth={1.5} />
-      <Line x1={cx - s} y1={cy} x2={cx + s} y2={cy + s} stroke={color} strokeWidth={1.5} />
+      <Line x1={cx + s} y1={cy - s} x2={cx - s} y2={cy} stroke={COLOR_OD} strokeWidth={1.5} />
+      <Line x1={cx - s} y1={cy} x2={cx + s} y2={cy + s} stroke={COLOR_OD} strokeWidth={1.5} />
     </G>
   );
 }
 
-/** > — OI vía ósea sin enmascarar */
-function PdfAngleRight({ cx, cy, color }: { cx: number; cy: number; color: string }) {
+function PdfAngleRight({ cx, cy }: { cx: number; cy: number }) {
   const s = 5;
   return (
     <G>
-      <Line x1={cx - s} y1={cy - s} x2={cx + s} y2={cy} stroke={color} strokeWidth={1.5} />
-      <Line x1={cx + s} y1={cy} x2={cx - s} y2={cy + s} stroke={color} strokeWidth={1.5} />
+      <Line x1={cx - s} y1={cy - s} x2={cx + s} y2={cy} stroke={COLOR_OI} strokeWidth={1.5} />
+      <Line x1={cx + s} y1={cy} x2={cx - s} y2={cy + s} stroke={COLOR_OI} strokeWidth={1.5} />
     </G>
   );
 }
 
-/** [ — OD vía ósea enmascarada */
-function PdfBracketRight({ cx, cy, color }: { cx: number; cy: number; color: string }) {
+function PdfBracketRight({ cx, cy }: { cx: number; cy: number }) {
   const h = 6, w = 4;
   return (
     <G>
-      <Line x1={cx} y1={cy - h} x2={cx} y2={cy + h} stroke={color} strokeWidth={1.5} />
-      <Line x1={cx} y1={cy - h} x2={cx + w} y2={cy - h} stroke={color} strokeWidth={1.5} />
-      <Line x1={cx} y1={cy + h} x2={cx + w} y2={cy + h} stroke={color} strokeWidth={1.5} />
+      <Line x1={cx} y1={cy - h} x2={cx} y2={cy + h} stroke={COLOR_OD} strokeWidth={1.5} />
+      <Line x1={cx} y1={cy - h} x2={cx + w} y2={cy - h} stroke={COLOR_OD} strokeWidth={1.5} />
+      <Line x1={cx} y1={cy + h} x2={cx + w} y2={cy + h} stroke={COLOR_OD} strokeWidth={1.5} />
     </G>
   );
 }
 
-/** ] — OI vía ósea enmascarada */
-function PdfBracketLeft({ cx, cy, color }: { cx: number; cy: number; color: string }) {
+function PdfBracketLeft({ cx, cy }: { cx: number; cy: number }) {
   const h = 6, w = 4;
   return (
     <G>
-      <Line x1={cx} y1={cy - h} x2={cx} y2={cy + h} stroke={color} strokeWidth={1.5} />
-      <Line x1={cx} y1={cy - h} x2={cx - w} y2={cy - h} stroke={color} strokeWidth={1.5} />
-      <Line x1={cx} y1={cy + h} x2={cx - w} y2={cy + h} stroke={color} strokeWidth={1.5} />
+      <Line x1={cx} y1={cy - h} x2={cx} y2={cy + h} stroke={COLOR_OI} strokeWidth={1.5} />
+      <Line x1={cx} y1={cy - h} x2={cx - w} y2={cy - h} stroke={COLOR_OI} strokeWidth={1.5} />
+      <Line x1={cx} y1={cy + h} x2={cx - w} y2={cy + h} stroke={COLOR_OI} strokeWidth={1.5} />
     </G>
   );
 }
 
-// ─── Chart ───────────────────────────────────────────────────────────────────
+// ─── Combined chart ──────────────────────────────────────────────────────────
 
-interface AudioChartProps {
-  data: DatosAudiometriaTonal;
-  isLeft: boolean;
-  color: string;
-}
-
-function AudioChart({ data, isLeft, color }: AudioChartProps) {
-  const airPts = pts(isLeft ? data.oido_izquierdo : data.oido_derecho);
-  const airMaskPts = pts(isLeft ? data.oido_izquierdo_enmascarado : data.oido_derecho_enmascarado);
-  const bonePts = pts(isLeft ? data.oseo_izquierdo : data.oseo_derecho);
-  const boneMaskPts = pts(isLeft ? data.oseo_izquierdo_enmascarado : data.oseo_derecho_enmascarado);
+function CombinedAudioChart({ data }: { data: DatosAudiometriaTonal }) {
+  const airOD = pts(data.oido_derecho);
+  const airOI = pts(data.oido_izquierdo);
+  const airMaskOD = pts(data.oido_derecho_enmascarado);
+  const airMaskOI = pts(data.oido_izquierdo_enmascarado);
+  const boneOD = pts(data.oseo_derecho);
+  const boneOI = pts(data.oseo_izquierdo);
+  const boneMaskOD = pts(data.oseo_derecho_enmascarado);
+  const boneMaskOI = pts(data.oseo_izquierdo_enmascarado);
 
   return (
     <Svg width={W} height={H}>
-      {/* Background */}
       <Rect x={PAD.left} y={PAD.top} width={PLOT_W} height={PLOT_H} fill="white" stroke="#333" strokeWidth={0.8} />
 
-      {/* Grid */}
       {DB_TICKS.map(db => (
         <Line key={db} x1={PAD.left} y1={toY(db)} x2={PAD.left + PLOT_W} y2={toY(db)}
           stroke={db === 0 ? '#999' : '#e0e0e0'} strokeWidth={db === 0 ? 0.6 : 0.3} />
@@ -143,39 +136,28 @@ function AudioChart({ data, isLeft, color }: AudioChartProps) {
           stroke="#e0e0e0" strokeWidth={0.3} />
       ))}
 
-      {/* Bone conduction dashed lines */}
-      {pathD(bonePts) && <Path d={pathD(bonePts)!} stroke={color} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
-      {pathD(boneMaskPts) && <Path d={pathD(boneMaskPts)!} stroke={color} strokeWidth={1.2} fill="none" strokeDasharray="3,2" strokeOpacity={0.6} />}
+      {/* Vía ósea — punteada */}
+      {pathD(boneOD, OD_OFFSET) && <Path d={pathD(boneOD, OD_OFFSET)!} stroke={COLOR_OD} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
+      {pathD(boneOI, OI_OFFSET) && <Path d={pathD(boneOI, OI_OFFSET)!} stroke={COLOR_OI} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
+      {pathD(boneMaskOD, OD_OFFSET) && <Path d={pathD(boneMaskOD, OD_OFFSET)!} stroke={COLOR_OD} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
+      {pathD(boneMaskOI, OI_OFFSET) && <Path d={pathD(boneMaskOI, OI_OFFSET)!} stroke={COLOR_OI} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
 
-      {/* Air conduction lines */}
-      {pathD(airPts) && <Path d={pathD(airPts)!} stroke={color} strokeWidth={1.5} fill="none" />}
-      {pathD(airMaskPts) && <Path d={pathD(airMaskPts)!} stroke={color} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
+      {/* Vía aérea — sólida (incluye enmascarada) */}
+      {pathD(airOD, OD_OFFSET) && <Path d={pathD(airOD, OD_OFFSET)!} stroke={COLOR_OD} strokeWidth={1.5} fill="none" />}
+      {pathD(airOI, OI_OFFSET) && <Path d={pathD(airOI, OI_OFFSET)!} stroke={COLOR_OI} strokeWidth={1.5} fill="none" />}
+      {pathD(airMaskOD, OD_OFFSET) && <Path d={pathD(airMaskOD, OD_OFFSET)!} stroke={COLOR_OD} strokeWidth={1.5} fill="none" />}
+      {pathD(airMaskOI, OI_OFFSET) && <Path d={pathD(airMaskOI, OI_OFFSET)!} stroke={COLOR_OI} strokeWidth={1.5} fill="none" />}
 
-      {/* Air conduction symbols */}
-      {airPts.map(p => isLeft
-        ? <PdfX key={p.f} cx={toX(p.f)} cy={toY(p.v)} color={color} />
-        : <PdfO key={p.f} cx={toX(p.f)} cy={toY(p.v)} color={color} />
-      )}
+      {airOD.map(p => <PdfO key={p.f} cx={cxOD(p.f)} cy={toY(p.v)} />)}
+      {airOI.map(p => <PdfX key={p.f} cx={cxOI(p.f)} cy={toY(p.v)} />)}
+      {airMaskOD.map(p => <PdfTriangle key={`m${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
+      {airMaskOI.map(p => <PdfSquare key={`m${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
 
-      {/* Air conduction masked symbols */}
-      {airMaskPts.map(p => isLeft
-        ? <PdfSquare key={p.f} cx={toX(p.f)} cy={toY(p.v)} color={color} />
-        : <PdfTriangle key={p.f} cx={toX(p.f)} cy={toY(p.v)} color={color} />
-      )}
+      {boneOD.map(p => <PdfAngleLeft key={p.f} cx={cxOD(p.f)} cy={toY(p.v)} />)}
+      {boneOI.map(p => <PdfAngleRight key={p.f} cx={cxOI(p.f)} cy={toY(p.v)} />)}
+      {boneMaskOD.map(p => <PdfBracketRight key={`m${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
+      {boneMaskOI.map(p => <PdfBracketLeft key={`m${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
 
-      {/* Bone conduction symbols */}
-      {bonePts.map(p => isLeft
-        ? <PdfAngleRight key={p.f} cx={toX(p.f)} cy={toY(p.v)} color={color} />
-        : <PdfAngleLeft key={p.f} cx={toX(p.f)} cy={toY(p.v)} color={color} />
-      )}
-
-      {/* Bone conduction masked symbols */}
-      {boneMaskPts.map(p => isLeft
-        ? <PdfBracketLeft key={p.f} cx={toX(p.f)} cy={toY(p.v)} color={color} />
-        : <PdfBracketRight key={p.f} cx={toX(p.f)} cy={toY(p.v)} color={color} />
-      )}
-
-      {/* Frequency labels */}
       {FREQS.map(f => (
         <Text key={f} x={toX(f)} y={PAD.top + PLOT_H + 10} style={{ fontSize: 6, textAnchor: 'middle', fill: '#333' }}>
           {f >= 1000 ? `${f / 1000}k` : String(f)}
@@ -185,13 +167,12 @@ function AudioChart({ data, isLeft, color }: AudioChartProps) {
         Frecuencia (Hz)
       </Text>
 
-      {/* dB labels */}
       {DB_TICKS.filter((_, i) => i % 2 === 0).map(db => (
         <Text key={db} x={PAD.left - 4} y={toY(db) + 2} style={{ fontSize: 6, textAnchor: 'end', fill: '#333' }}>
           {db}
         </Text>
       ))}
-      <Text x={8} y={PAD.top + PLOT_H / 2} style={{ fontSize: 7, textAnchor: 'middle', fill: '#555' }}>
+      <Text x={10} y={PAD.top + PLOT_H / 2} style={{ fontSize: 7, textAnchor: 'middle', fill: '#555' }}>
         dB HL
       </Text>
     </Svg>
@@ -234,30 +215,20 @@ export function PDFAudiometryChart({ data }: { data: DatosAudiometriaTonal }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Audiograma (ASHA 1990)</Text>
-      <View style={styles.chartsRow}>
-        <View style={styles.chartWrapper}>
-          <Text style={[styles.chartLabel, { color: '#cc0000' }]}>Oído Derecho (OD)</Text>
-          <AudioChart data={data} isLeft={false} color="#cc0000" />
-        </View>
-        <View style={styles.chartWrapper}>
-          <Text style={[styles.chartLabel, { color: '#0000cc' }]}>Oído Izquierdo (OI)</Text>
-          <AudioChart data={data} isLeft={true} color="#0000cc" />
-        </View>
-      </View>
+      <CombinedAudioChart data={data} />
 
-      {/* Legend */}
       <View style={styles.legend}>
-        <View style={styles.legendItem}><LegendO color="#cc0000" /><Text style={styles.legendText}>OD Aéreo</Text></View>
-        <View style={styles.legendItem}><LegendX color="#0000cc" /><Text style={styles.legendText}>OI Aéreo</Text></View>
+        <View style={styles.legendItem}><LegendO color={COLOR_OD} /><Text style={styles.legendText}>OD Aéreo</Text></View>
+        <View style={styles.legendItem}><LegendX color={COLOR_OI} /><Text style={styles.legendText}>OI Aéreo</Text></View>
         {hasMasked && <>
-          <View style={styles.legendItem}><LegendTriangle color="#cc0000" /><Text style={styles.legendText}>OD Aéreo enmasc.</Text></View>
-          <View style={styles.legendItem}><LegendSquare color="#0000cc" /><Text style={styles.legendText}>OI Aéreo enmasc.</Text></View>
+          <View style={styles.legendItem}><LegendTriangle color={COLOR_OD} /><Text style={styles.legendText}>OD Aéreo enmasc.</Text></View>
+          <View style={styles.legendItem}><LegendSquare color={COLOR_OI} /><Text style={styles.legendText}>OI Aéreo enmasc.</Text></View>
         </>}
         {hasOseo && <>
-          <View style={styles.legendItem}><LegendAngleLeft color="#cc0000" /><Text style={styles.legendText}>OD Óseo</Text></View>
-          <View style={styles.legendItem}><LegendAngleRight color="#0000cc" /><Text style={styles.legendText}>OI Óseo</Text></View>
-          <View style={styles.legendItem}><LegendBracketRight color="#cc0000" /><Text style={styles.legendText}>OD Óseo enmasc.</Text></View>
-          <View style={styles.legendItem}><LegendBracketLeft color="#0000cc" /><Text style={styles.legendText}>OI Óseo enmasc.</Text></View>
+          <View style={styles.legendItem}><LegendAngleLeft color={COLOR_OD} /><Text style={styles.legendText}>OD Óseo</Text></View>
+          <View style={styles.legendItem}><LegendAngleRight color={COLOR_OI} /><Text style={styles.legendText}>OI Óseo</Text></View>
+          <View style={styles.legendItem}><LegendBracketRight color={COLOR_OD} /><Text style={styles.legendText}>OD Óseo enmasc.</Text></View>
+          <View style={styles.legendItem}><LegendBracketLeft color={COLOR_OI} /><Text style={styles.legendText}>OI Óseo enmasc.</Text></View>
         </>}
       </View>
     </View>

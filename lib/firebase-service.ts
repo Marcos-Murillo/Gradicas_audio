@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore"
+import type { DocumentData } from "firebase/firestore"
 import { db } from "./firebase"
 import type { EvaluacionAuditiva } from "@/types/evaluation"
 import { toast } from "@/hooks/use-toast"
@@ -31,14 +32,16 @@ export interface FirebaseService {
  * Recursively removes all undefined values from an object.
  * Firestore does not accept undefined — only null or omitted fields.
  */
-function removeUndefined(obj: any): any {
-  if (Array.isArray(obj)) return obj.map(removeUndefined)
+function removeUndefined<T>(obj: T): T {
+  if (Array.isArray(obj)) {
+    return obj.map((v) => removeUndefined(v)) as unknown as T
+  }
   if (obj !== null && typeof obj === "object" && !(obj instanceof Timestamp) && !(obj instanceof Date)) {
     return Object.fromEntries(
-      Object.entries(obj)
+      Object.entries(obj as Record<string, unknown>)
         .filter(([_, v]) => v !== undefined)
         .map(([k, v]) => [k, removeUndefined(v)])
-    )
+    ) as unknown as T
   }
   return obj
 }
@@ -67,7 +70,7 @@ export class FirestoreService implements FirebaseService {
   /**
    * Converts Firestore Timestamps back to Date objects
    */
-  private convertTimestampsToDates(data: any): EvaluacionAuditiva {
+  private convertTimestampsToDates(data: DocumentData): EvaluacionAuditiva {
     return {
       ...data,
       paciente: {
@@ -152,7 +155,7 @@ export class FirestoreService implements FirebaseService {
       const data = docSnap.data()
       return {
         id: docSnap.id,
-        ...this.convertTimestampsToDates(data),
+        ...this.convertTimestampsToDates(data as DocumentData),
       }
     } catch (error) {
       console.error("Error getting evaluation:", error)
@@ -178,7 +181,7 @@ export class FirestoreService implements FirebaseService {
 
       return querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...this.convertTimestampsToDates(doc.data()),
+        ...this.convertTimestampsToDates(doc.data() as DocumentData),
       }))
     } catch (error) {
       console.error("Error loading evaluations:", error)

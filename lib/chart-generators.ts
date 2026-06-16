@@ -75,7 +75,7 @@ export interface TympanometryPoint {
  * - As: Narrow peak (stiffness/rigidity)
  * - Ad: Wide peak (hypercompliance/flaccidity)
  */
-export type TipoCurvaTimpanometrica = 'A' | 'B' | 'C' | 'As' | 'Ad';
+export type TipoCurvaTimpanometrica = 'A' | 'B' | 'C' | 'P';
 
 /**
  * Generates a tympanogram curve based on curve type, peak pressure, and compliance.
@@ -133,19 +133,10 @@ export function generateTympanogramCurve(
         points.push({ presion: p, cumplimiento: y });
       }
       break;
-      
-    case 'As': // Narrow peak (stiffness/rigidity)
-      // Gaussian curve with narrow width (smaller denominator)
+
+    case 'P': // Custom curve type used by the app (treated as gaussian)
       for (let p = -400; p <= 200; p += 10) {
-        const y = cumplimiento * Math.exp(-Math.pow((p - presionPico) / 50, 2));
-        points.push({ presion: p, cumplimiento: y });
-      }
-      break;
-      
-    case 'Ad': // Wide peak (hypercompliance/flaccidity)
-      // Gaussian curve with wide width (larger denominator)
-      for (let p = -400; p <= 200; p += 10) {
-        const y = cumplimiento * Math.exp(-Math.pow((p - presionPico) / 150, 2));
+        const y = cumplimiento * Math.exp(-Math.pow((p - presionPico) / 100, 2));
         points.push({ presion: p, cumplimiento: y });
       }
       break;

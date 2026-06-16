@@ -18,7 +18,7 @@ export type Oido = 'derecho' | 'izquierdo';
 /**
  * Tipos de curva timpanométrica
  */
-export type TipoCurvaTimpanometrica = 'A' | 'B' | 'C' | 'As' | 'Ad';
+export type TipoCurvaTimpanometrica = 'A' | 'B' | 'C' | 'P';
 
 /**
  * Información demográfica del paciente
@@ -39,8 +39,8 @@ export interface FrecuenciasAudiometry {
   '500': number;
   '1000': number;
   '2000': number;
+  '3000': number;
   '4000': number;
-  '8000': number;
 }
 
 /**
@@ -91,6 +91,9 @@ export interface DatosLogoaudiometria {
   puntos: {
     derecho: PuntoLogoaudiometria[];
     izquierdo: PuntoLogoaudiometria[];
+    // Logo enmascarada (opcional)
+    derecho_enmascarado?: PuntoLogoaudiometria[];
+    izquierdo_enmascarado?: PuntoLogoaudiometria[];
   };
 }
 

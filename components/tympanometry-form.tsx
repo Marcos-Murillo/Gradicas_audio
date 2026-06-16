@@ -17,12 +17,11 @@ export interface TympanometryFormProps {
   initialData?: DatosTimpanometria;
 }
 
-const CURVE_TYPES: { value: TipoCurvaTimpanometrica; label: string; desc: string }[] = [
-  { value: 'A',  label: 'Tipo A',  desc: 'Normal' },
-  { value: 'As', label: 'Tipo As', desc: 'Rigidez (pico estrecho)' },
-  { value: 'Ad', label: 'Tipo Ad', desc: 'Hipermóvil (pico ancho)' },
-  { value: 'B',  label: 'Tipo B',  desc: 'Plana — efusión' },
-  { value: 'C',  label: 'Tipo C',  desc: 'Presión negativa — disfunción tubárica' },
+const CURVE_TYPES: { value: TipoCurvaTimpanometrica; label: string }[] = [
+  { value: 'A', label: 'Tipo A' },
+  { value: 'P', label: 'Tipo P' },
+  { value: 'B', label: 'Tipo B' },
+  { value: 'C', label: 'Tipo C' },
 ];
 
 const REFLEX_FREQS: FrecuenciaReflejo[] = ['500', '1000', '2000', '4000'];
@@ -110,7 +109,7 @@ export function TympanometryForm({ onSubmit, initialData }: TympanometryFormProp
   });
 
   const form = useForm<DatosTimpanometria>({
-    resolver: zodResolver(timpanometriaSchema) as any,
+    resolver: zodResolver(timpanometriaSchema),
     defaultValues: initialData || {
       tipo: 'timpanometria',
       derecho: { tipoCurva: undefined, presionPico: undefined, cumplimiento: undefined },
@@ -161,7 +160,7 @@ export function TympanometryForm({ onSubmit, initialData }: TympanometryFormProp
                   </FormControl>
                   <SelectContent>
                     {CURVE_TYPES.map(t => (
-                      <SelectItem key={t.value} value={t.value}>{t.label} — {t.desc}</SelectItem>
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -230,7 +229,7 @@ export function TympanometryForm({ onSubmit, initialData }: TympanometryFormProp
                   </FormControl>
                   <SelectContent>
                     {CURVE_TYPES.map(t => (
-                      <SelectItem key={t.value} value={t.value}>{t.label} — {t.desc}</SelectItem>
+                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
