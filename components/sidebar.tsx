@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Database, Activity } from "lucide-react"
+import { Home, Database, Activity, Pencil } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function Sidebar() {
@@ -13,6 +13,11 @@ export function Sidebar() {
       href: "/",
       label: "Inicio",
       icon: Home,
+    },
+    {
+      href: "/dibujar",
+      label: "Dibujar",
+      icon: Pencil,
     },
     {
       href: "/saved",

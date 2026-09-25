@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { FileText, Loader2, FolderOpen } from "lucide-react"
+import { FileText, Loader2, FolderOpen, Pencil } from "lucide-react"
 import { toast } from "sonner"
 import type {
   TipoPrueba,
@@ -191,6 +191,15 @@ export default function Home() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-8">
           <ClinicHeader />
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/dibujar")}
+              className="gap-2"
+            >
+              <Pencil className="h-4 w-4" />
+              Dibujar gráfica
+            </Button>
             <Button
               variant="outline"
               size="sm"
