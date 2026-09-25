@@ -42,7 +42,7 @@ export function TestSelector({ selectedTests, onAddTest, onRemoveTest }: TestSel
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold mb-4">Seleccionar Pruebas</h2>
+        <h2 className="mb-4 text-sm font-extrabold uppercase tracking-[0.4px] text-navy">Seleccionar Pruebas</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {availableTests.map((test) => {
             const isSelected = isTestSelected(test.tipo);
@@ -81,7 +81,7 @@ export function TestSelector({ selectedTests, onAddTest, onRemoveTest }: TestSel
 
       {selectedTests.length > 0 && (
         <div>
-          <h3 className="text-xl font-semibold mb-3">Pruebas Seleccionadas</h3>
+          <h3 className="mb-3 text-sm font-extrabold uppercase tracking-[0.4px] text-navy">Pruebas Seleccionadas</h3>
           <div className="space-y-2">
             {selectedTests.map((test) => {
               const testInfo = availableTests.find((t) => t.tipo === test);

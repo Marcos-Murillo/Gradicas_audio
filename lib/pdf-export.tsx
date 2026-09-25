@@ -37,8 +37,22 @@ export class ReactPDFExportService implements PDFExportService {
   async exportEvaluationToPDF(evaluation: EvaluacionAuditiva): Promise<void> {
     try {
       // Generar el documento PDF usando @react-pdf/renderer
+      let logoSrc: string | undefined
+      try {
+        const res = await fetch('/logo-renteria.png')
+        if (res.ok) {
+          const buf = await res.arrayBuffer()
+          const bytes = new Uint8Array(buf)
+          let binary = ''
+          for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+          logoSrc = `data:image/png;base64,${btoa(binary)}`
+        }
+      } catch {
+        logoSrc = undefined
+      }
+
       const blob = await pdf(
-        <PDFDocument evaluation={evaluation} />
+        <PDFDocument evaluation={evaluation} logoSrc={logoSrc} />
       ).toBlob();
 
       // Generar nombre de archivo (Requirement 12.8)

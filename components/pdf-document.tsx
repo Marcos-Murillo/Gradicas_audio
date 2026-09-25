@@ -1,25 +1,29 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, Image, StyleSheet } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PDFTympanometryChart } from '@/components/pdf-tympanometry-chart';
+import { PDFReflexGrid } from '@/components/pdf-reflex-grid';
 import { PDFAudiometryChart } from '@/components/pdf-audiometry-chart';
 import { PDFLogoaudiometryChart } from '@/components/pdf-logoaudiometry-chart';
 import type { 
   EvaluacionAuditiva, 
   DatosAudiometriaTonal, 
   DatosLogoaudiometria,
+  DatosTimpanometria,
 } from '@/types/evaluation';
 
 // Estilos para el PDF
 const styles = StyleSheet.create({
   page: {
-    padding: 30,
+    paddingTop: 62,
+    paddingHorizontal: 28,
+    paddingBottom: 36,
     fontSize: 10,
     fontFamily: 'Helvetica',
   },
   header: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#2f5c9e',
     color: 'white',
     padding: 15,
     textAlign: 'center',
@@ -69,10 +73,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   testTitle: {
-    fontSize: 13,
+    fontSize: 9,
     fontWeight: 'bold',
-    color: '#1d4ed8',
-    marginBottom: 10,
+    color: '#24306b',
+    marginBottom: 2,
   },
   dataGrid: {
     flexDirection: 'row',
@@ -91,10 +95,10 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   earTitleRight: {
-    color: '#dc2626',
+    color: '#d11c1c',
   },
   earTitleLeft: {
-    color: '#2563eb',
+    color: '#1452d1',
   },
   dataItem: {
     fontSize: 9,
@@ -107,20 +111,57 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 30,
-    left: 30,
-    right: 30,
+    bottom: 16,
+    left: 28,
+    right: 28,
     textAlign: 'center',
     fontSize: 8,
-    color: '#6b7280',
+    color: '#5b6675',
+    borderTopWidth: 1,
+    borderTopColor: '#d7dce4',
+    paddingTop: 4,
   },
 });
 
 interface PDFDocumentProps {
   evaluation: EvaluacionAuditiva;
+  logoSrc?: string;
 }
 
-export function PDFDocument({ evaluation }: PDFDocumentProps) {
+function PdfClinicHeader({ logoSrc, fecha }: { logoSrc?: string; fecha: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1.5, borderBottomColor: '#3b2a63', paddingBottom: 4, marginBottom: 6 }}>
+      {logoSrc ? <Image src={logoSrc} style={{ width: 36, height: 36, objectFit: 'contain' }} /> : null}
+      <View style={{ flex: 1, alignItems: 'center' }}>
+        <Text style={{ fontSize: 9, fontWeight: 'bold', color: '#24306b' }}>ESPECIALISTA EN VÉRTIGO Y PÉRDIDA AUDITIVA</Text>
+        <Text style={{ fontSize: 7, color: '#3a4358' }}>Cra. 30 # 32-29, B/ Centro — Frente al Banco de la Mujer · Cel. 316 704 5684</Text>
+      </View>
+      <Text style={{ fontSize: 8, fontWeight: 'bold', color: '#1a2230' }}>{fecha}</Text>
+    </View>
+  );
+}
+
+function EpsBox({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={{ borderWidth: 0.8, borderColor: '#1a2230', marginBottom: 5 }}>
+      <View style={{ backgroundColor: '#2f5c9e', paddingVertical: 2, paddingHorizontal: 4 }}>
+        <Text style={{ color: '#ffffff', fontSize: 7, fontWeight: 'bold' }}>{title}</Text>
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function EpsCell({ label, value, flex = 1 }: { label: string; value: string; flex?: number }) {
+  return (
+    <View style={{ flex, borderRightWidth: 0.5, borderRightColor: '#b9c0cc', paddingHorizontal: 3, paddingVertical: 2 }}>
+      <Text style={{ fontSize: 5.5, color: '#5b6675' }}>{label}</Text>
+      <Text style={{ fontSize: 8, color: '#1a2230' }}>{value || '—'}</Text>
+    </View>
+  );
+}
+
+export function PDFDocument({ evaluation, logoSrc }: PDFDocumentProps) {
   const { paciente, pruebas, examinador, fechaExamen } = evaluation;
 
   const fechaNacimientoStr = format(paciente.fechaNacimiento, 'dd/MM/yyyy', { locale: es });
@@ -130,118 +171,69 @@ export function PDFDocument({ evaluation }: PDFDocumentProps) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Encabezado */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>SISTEMA EVALUACIÓN AUDITIVA</Text>
-          <Text style={styles.headerSubtitle}>Universidad del Valle</Text>
+        <View fixed style={{ position: 'absolute', top: 14, left: 28, right: 28 }}>
+          <PdfClinicHeader logoSrc={logoSrc} fecha={format(fechaExamen, 'dd/MM/yyyy', { locale: es })} />
         </View>
 
-        {/* Datos del Paciente */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Datos del Paciente</Text>
-          <View style={styles.row}>
-            <View style={styles.column}>
-              <Text style={styles.label}>Apellido</Text>
-              <Text style={styles.value}>{paciente.apellido}</Text>
-            </View>
-            <View style={styles.column}>
-              <Text style={styles.label}>Nombre</Text>
-              <Text style={styles.value}>{paciente.nombre}</Text>
-            </View>
+        <EpsBox title="IDENTIFICACIÓN">
+          <View style={{ flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: '#b9c0cc' }}>
+            <EpsCell label="APELLIDO" value={paciente.apellido} flex={1.2} />
+            <EpsCell label="NOMBRE" value={paciente.nombre} flex={1.2} />
+            <EpsCell label="NACIMIENTO" value={fechaNacimientoStr} />
+            <EpsCell label="SEXO" value={sexoCapitalizado} flex={0.7} />
+            <EpsCell label="FECHA EXAMEN" value={fechaExamenStr} flex={1.1} />
           </View>
-          <View style={styles.row}>
-            <View style={styles.column}>
-              <Text style={styles.label}>Fecha de Nacimiento</Text>
-              <Text style={styles.value}>{fechaNacimientoStr}</Text>
-            </View>
-            <View style={styles.column}>
-              <Text style={styles.label}>Sexo</Text>
-              <Text style={styles.value}>{sexoCapitalizado}</Text>
-            </View>
+          <View style={{ flexDirection: 'row' }}>
+            <EpsCell label="EXAMINADOR" value={examinador.nombre} flex={2} />
+            <EpsCell label="CÓDIGO" value={examinador.codigo} />
           </View>
-          <View style={styles.separator} />
-          <View>
-            <Text style={styles.label}>Fecha y Hora del Examen</Text>
-            <Text style={styles.value}>{fechaExamenStr}</Text>
-          </View>
-        </View>
+        </EpsBox>
 
-        {/* Pruebas Realizadas */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📊 Pruebas Realizadas</Text>
+        <EpsBox title="PRUEBAS REALIZADAS">
           {pruebas.map((prueba, index) => (
             <View key={index}>
-              {prueba.tipo === 'tonal' && (
-                <View>
-                  <Text style={styles.testTitle}>{index + 1}. Audiometría Tonal</Text>
-                  <AudiometryDataSection data={prueba} />
-                </View>
-              )}
-              {prueba.tipo === 'logoaudiometria' && (
-                <View>
-                  <Text style={styles.testTitle}>{index + 1}. Logoaudiometría</Text>
-                  <LogoaudiometryPDFSection data={prueba} index={index + 1} />
-                </View>
-              )}
-              {prueba.tipo === 'timpanometria' && (
-                <View>
-                  <Text style={styles.testTitle}>{index + 1}. Timpanometría</Text>
-                </View>
-              )}
-              {index < pruebas.length - 1 && <View style={styles.separator} />}
+              {prueba.tipo === 'tonal' && <AudiometryDataSection data={prueba} />}
+              {prueba.tipo === 'logoaudiometria' && <LogoaudiometryPDFSection data={prueba} />}
+              {prueba.tipo === 'timpanometria' && <TympanometryDataSection data={prueba} />}
             </View>
           ))}
-        </View>
+        </EpsBox>
 
-        {/* Datos del Examinador */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Datos del Examinador</Text>
-          <View style={styles.row}>
-            <View style={styles.column}>
-              <Text style={styles.label}>Nombre</Text>
-              <Text style={styles.value}>{examinador.nombre}</Text>
-            </View>
-            <View style={styles.column}>
-              <Text style={styles.label}>Código Profesional</Text>
-              <Text style={styles.value}>{examinador.codigo}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Sistema de Evaluación Auditiva Profesional — Universidad del Valle
-        </Text>
-      </Page>
-
-      {/* Páginas de gráficas — una por prueba */}
-      {pruebas.map((prueba, index) => (
-        <Page key={`chart-${index}`} size="A4" style={styles.page}>
-          <View style={styles.section}>
+        {pruebas.map((prueba, index) => (
+          <View key={`chart-${index}`} wrap={false} style={{ marginBottom: 6 }}>
             {prueba.tipo === 'tonal' && (
               <View>
-                <Text style={styles.testTitle}>Audiograma — Audiometría Tonal</Text>
+                <Text style={styles.testTitle}>Audiometría tonal</Text>
                 <PDFAudiometryChart data={prueba} />
               </View>
             )}
             {prueba.tipo === 'logoaudiometria' && (
               <View>
-                <Text style={styles.testTitle}>Gráfica — Logoaudiometría</Text>
+                <Text style={styles.testTitle}>Logoaudiometría</Text>
                 <PDFLogoaudiometryChart data={prueba} />
               </View>
             )}
             {prueba.tipo === 'timpanometria' && (
               <View>
-                <Text style={styles.testTitle}>Timpanograma</Text>
+                <Text style={styles.testTitle}>Timpanometría</Text>
                 <PDFTympanometryChart data={prueba} />
               </View>
             )}
           </View>
-          <Text style={styles.footer}>
-            Sistema de Evaluación Auditiva Profesional — Universidad del Valle
-          </Text>
-        </Page>
-      ))}
+        ))}
+
+        {pruebas.map((prueba, index) => (
+          prueba.tipo === 'timpanometria' && prueba.reflejos ? (
+            <View key={`reflex-${index}`} wrap={false} style={{ marginBottom: 6 }}>
+              <PDFReflexGrid data={prueba} />
+            </View>
+          ) : null
+        ))}
+
+        <Text style={styles.footer} fixed>
+          Dr. Julián Rentería, Audiólogo — Cra. 30 # 32-29 — Cel. 316 704 5684
+        </Text>
+      </Page>
     </Document>
   );
 }
@@ -249,87 +241,58 @@ export function PDFDocument({ evaluation }: PDFDocumentProps) {
 // Sección de datos de Audiometría Tonal para PDF
 function AudiometryDataSection({ data }: { data: DatosAudiometriaTonal }) {
   const frequencies = ['250', '500', '1000', '2000', '3000', '4000'] as const;
+  const cell = (text: string, color?: string) => (
+    <View style={{ flex: 1, borderRightWidth: 0.4, borderRightColor: '#d7dce4', paddingVertical: 1, paddingHorizontal: 2 }}>
+      <Text style={{ fontSize: 6.5, textAlign: 'center', color: color || '#1a2230' }}>{text}</Text>
+    </View>
+  );
+  const row = (label: string, values: Partial<Record<string, number>> | undefined, color: string) => (
+    <View style={{ flexDirection: 'row', borderTopWidth: 0.4, borderTopColor: '#d7dce4' }}>
+      {cell(label, color)}
+      {frequencies.map(f => cell(values?.[f] !== undefined ? String(values[f]) : '—', color))}
+    </View>
+  );
 
   return (
-    <View style={styles.dataGrid}>
-      <View style={styles.dataColumn}>
-        <Text style={[styles.earTitle, styles.earTitleRight]}>Oído Derecho (OD):</Text>
-        {frequencies.map((freq) => {
-          const value = data.oido_derecho[freq];
-          return (
-            <Text key={`od-${freq}`} style={styles.dataItem}>
-              {freq} Hz: {value !== undefined ? `${value} dB` : 'N/A'}
-            </Text>
-          );
-        })}
+    <View style={{ marginBottom: 3 }}>
+      <Text style={{ fontSize: 6.5, fontWeight: 'bold', color: '#24306b', paddingHorizontal: 3, paddingTop: 2 }}>AUDIOMETRÍA TONAL (dB HL)</Text>
+      <View style={{ flexDirection: 'row', backgroundColor: '#eef1f5' }}>
+        {cell('Oído')}
+        {frequencies.map(f => cell(f))}
       </View>
-      <View style={styles.dataColumn}>
-        <Text style={[styles.earTitle, styles.earTitleLeft]}>Oído Izquierdo (OI):</Text>
-        {frequencies.map((freq) => {
-          const value = data.oido_izquierdo[freq];
-          return (
-            <Text key={`oi-${freq}`} style={styles.dataItem}>
-              {freq} Hz: {value !== undefined ? `${value} dB` : 'N/A'}
-            </Text>
-          );
-        })}
-      </View>
+      {row('OD', data.oido_derecho, '#d11c1c')}
+      {row('OI', data.oido_izquierdo, '#1452d1')}
     </View>
   );
 }
 
 // Sección de Logoaudiometría para PDF
-function LogoaudiometryPDFSection({ 
-  data, 
-  index,
-}: { 
-  data: DatosLogoaudiometria; 
-  index: number;
-}) {
-  return (
-    <View style={styles.testSection}>
-      <Text style={styles.testTitle}>{index}. Logoaudiometría</Text>
-      <View style={styles.dataGrid}>
-        <View style={styles.dataColumn}>
-          <Text style={styles.earTitle}>Oído Derecho (OD):</Text>
-          {data.puntos.derecho.map(p => (
-            <Text key={p.db} style={[styles.dataItem, styles.earTitleRight]}>
-              {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
-            </Text>
-          ))}
-        </View>
-        <View style={styles.dataColumn}>
-          <Text style={styles.earTitle}>Oído Izquierdo (OI):</Text>
-          {data.puntos.izquierdo.map(p => (
-            <Text key={p.db} style={[styles.dataItem, styles.earTitleLeft]}>
-              {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
-            </Text>
-          ))}
-        </View>
-      </View>
+function TympanometryDataSection({ data }: { data: DatosTimpanometria }) {
+  const line = (label: string, side: DatosTimpanometria['derecho']) =>
+    `${label}  curva ${side.tipoCurva}  ·  ${side.presionPico} daPa  ·  ${side.cumplimiento} ml${side.volumenCanalExterno !== undefined ? `  ·  vol. ${side.volumenCanalExterno} ml` : ''}`
 
-      {(data.puntos.derecho_enmascarado?.length || data.puntos.izquierdo_enmascarado?.length) && (
-        <View style={styles.dataGrid}>
-          <View style={styles.dataColumn}>
-            <Text style={styles.earTitle}>OD Enmascarada:</Text>
-            {(data.puntos.derecho_enmascarado ?? []).map(p => (
-              <Text key={`odm-${p.db}`} style={[styles.dataItem, styles.earTitleRight]}>
-                {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
-              </Text>
-            ))}
-          </View>
-          <View style={styles.dataColumn}>
-            <Text style={styles.earTitle}>OI Enmascarada:</Text>
-            {(data.puntos.izquierdo_enmascarado ?? []).map(p => (
-              <Text key={`oim-${p.db}`} style={[styles.dataItem, styles.earTitleLeft]}>
-                {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
-              </Text>
-            ))}
-          </View>
-        </View>
-      )}
+  return (
+    <View style={{ paddingHorizontal: 3, paddingVertical: 2, borderTopWidth: 0.4, borderTopColor: '#d7dce4' }}>
+      <Text style={{ fontSize: 6.5, fontWeight: 'bold', color: '#24306b' }}>TIMPANOMETRÍA</Text>
+      <Text style={{ fontSize: 7, color: '#d11c1c' }}>{line('OD', data.derecho)}</Text>
+      <Text style={{ fontSize: 7, color: '#1452d1' }}>{line('OI', data.izquierdo)}</Text>
     </View>
-  );
+  )
+}
+
+function logoLine(puntos: { db: number; correctas: number }[]) {
+  if (!puntos.length) return '—'
+  return puntos.map(p => `${p.db} dB ${Math.round((p.correctas / 10) * 100)}%`).join('   ')
+}
+
+function LogoaudiometryPDFSection({ data }: { data: DatosLogoaudiometria }) {
+  return (
+    <View style={{ paddingHorizontal: 3, paddingVertical: 2, borderTopWidth: 0.4, borderTopColor: '#d7dce4' }}>
+      <Text style={{ fontSize: 6.5, fontWeight: 'bold', color: '#24306b' }}>LOGOAUDIOMETRÍA</Text>
+      <Text style={{ fontSize: 7, color: '#d11c1c' }}>OD  {logoLine(data.puntos.derecho)}</Text>
+      <Text style={{ fontSize: 7, color: '#1452d1' }}>OI  {logoLine(data.puntos.izquierdo)}</Text>
+    </View>
+  )
 }
 
 

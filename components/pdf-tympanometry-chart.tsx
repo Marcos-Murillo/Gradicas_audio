@@ -112,14 +112,12 @@ export function PDFTympanometryChart({ data }: { data: DatosTimpanometria }) {
         {X_TICKS.map(x => (
           <G key={`xt-${x}`}>
             <Line x1={toSvgX(x)} y1={PAD.top + PLOT_H} x2={toSvgX(x)} y2={PAD.top + PLOT_H + 4} stroke="#555" strokeWidth={0.6} />
-            <Text x={toSvgX(x)} y={PAD.top + PLOT_H + 12} style={{ fontSize: 6, textAnchor: 'middle', fill: '#444' }}>{x}</Text>
+            <Text x={toSvgX(x)} y={PAD.top + PLOT_H + 14} textAnchor="middle" style={{ fontSize: 7, fill: '#444' }}>{x}</Text>
           </G>
         ))}
 
         {/* X axis label */}
-        <Text x={PAD.left + PLOT_W / 2} y={VH - 6}
-          style={{ fontSize: 7, textAnchor: 'middle', fill: '#444' }}
-        >
+        <Text x={PAD.left + PLOT_W / 2} y={VH - 8} textAnchor="middle" style={{ fontSize: 8, fill: '#444' }}>
           Presión (daPa)
         </Text>
 
@@ -127,16 +125,11 @@ export function PDFTympanometryChart({ data }: { data: DatosTimpanometria }) {
         {yTicks.map(y => (
           <G key={`yt-${y}`}>
             <Line x1={PAD.left - 4} y1={toSvgY(y, yMin, yMax)} x2={PAD.left} y2={toSvgY(y, yMin, yMax)} stroke="#555" strokeWidth={0.6} />
-            <Text x={PAD.left - 6} y={toSvgY(y, yMin, yMax) + 2} style={{ fontSize: 6, textAnchor: 'end', fill: '#444' }}>{y}</Text>
+            <Text x={PAD.left - 6} y={toSvgY(y, yMin, yMax) + 2} textAnchor="end" style={{ fontSize: 7, fill: '#444' }}>{y}</Text>
           </G>
         ))}
 
         {/* Y axis label */}
-        <Text x={10} y={PAD.top + PLOT_H / 2}
-          style={{ fontSize: 7, textAnchor: 'middle', fill: '#444' }}
-        >
-          Cumplimiento (ml)
-        </Text>
       </Svg>
 
       {/* Legend */}

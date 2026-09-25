@@ -10,26 +10,27 @@ const styles = StyleSheet.create({
   legendText: { fontSize: 6.5 },
 });
 
-const W = 460;
-const H = 280;
-const PAD = { top: 14, right: 16, bottom: 40, left: 44 };
-const PLOT_W = W - PAD.left - PAD.right;
-const PLOT_H = H - PAD.top - PAD.bottom;
+const GRID_FREQS = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000];
+const FUNITS = [0, 1, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8];
 const FREQS = [250, 500, 1000, 2000, 3000, 4000];
-const DB_MAX = 130;
-const DB_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130];
+const AG = { left: 36, top: 16, unit: 42, rowh: 12 };
+const PLOT_W = FUNITS[FUNITS.length - 1] * AG.unit;
+const PLOT_H = 12 * AG.rowh;
+const PAD = { top: AG.top, right: 8, bottom: 36, left: AG.left };
+const W = AG.left + PLOT_W + 8;
+const H = AG.top + PLOT_H + PAD.bottom;
+const DB_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120];
 
-const COLOR_OD = '#cc0000';
-const COLOR_OI = '#0000cc';
-const OD_OFFSET = 4;
-const OI_OFFSET = -4;
+const COLOR_OD = '#d11c1c';
+const COLOR_OI = '#1452d1';
 
 function toX(freq: number) {
-  return PAD.left + ((Math.log10(freq) - Math.log10(250)) / (Math.log10(4000) - Math.log10(250))) * PLOT_W;
+  const i = GRID_FREQS.indexOf(freq);
+  return AG.left + (i < 0 ? 0 : FUNITS[i]) * AG.unit;
 }
-function toY(db: number) { return PAD.top + (db / DB_MAX) * PLOT_H; }
-function cxOD(freq: number) { return toX(freq) + OD_OFFSET; }
-function cxOI(freq: number) { return toX(freq) + OI_OFFSET; }
+function toY(db: number) { return AG.top + (db / 10) * AG.rowh; }
+function cxOD(freq: number) { return toX(freq); }
+function cxOI(freq: number) { return toX(freq); }
 
 type EarData = Partial<FrecuenciasAudiometry>;
 function pts(data: EarData | undefined) {
@@ -137,16 +138,16 @@ function CombinedAudioChart({ data }: { data: DatosAudiometriaTonal }) {
       ))}
 
       {/* Vía ósea — punteada */}
-      {pathD(boneOD, OD_OFFSET) && <Path d={pathD(boneOD, OD_OFFSET)!} stroke={COLOR_OD} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
-      {pathD(boneOI, OI_OFFSET) && <Path d={pathD(boneOI, OI_OFFSET)!} stroke={COLOR_OI} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
-      {pathD(boneMaskOD, OD_OFFSET) && <Path d={pathD(boneMaskOD, OD_OFFSET)!} stroke={COLOR_OD} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
-      {pathD(boneMaskOI, OI_OFFSET) && <Path d={pathD(boneMaskOI, OI_OFFSET)!} stroke={COLOR_OI} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
+      {pathD(boneOD, 0) && <Path d={pathD(boneOD, 0)!} stroke={COLOR_OD} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
+      {pathD(boneOI, 0) && <Path d={pathD(boneOI, 0)!} stroke={COLOR_OI} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
+      {pathD(boneMaskOD, 0) && <Path d={pathD(boneMaskOD, 0)!} stroke={COLOR_OD} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
+      {pathD(boneMaskOI, 0) && <Path d={pathD(boneMaskOI, 0)!} stroke={COLOR_OI} strokeWidth={1.2} fill="none" strokeDasharray="3,2" />}
 
       {/* Vía aérea — sólida (incluye enmascarada) */}
-      {pathD(airOD, OD_OFFSET) && <Path d={pathD(airOD, OD_OFFSET)!} stroke={COLOR_OD} strokeWidth={1.5} fill="none" />}
-      {pathD(airOI, OI_OFFSET) && <Path d={pathD(airOI, OI_OFFSET)!} stroke={COLOR_OI} strokeWidth={1.5} fill="none" />}
-      {pathD(airMaskOD, OD_OFFSET) && <Path d={pathD(airMaskOD, OD_OFFSET)!} stroke={COLOR_OD} strokeWidth={1.5} fill="none" />}
-      {pathD(airMaskOI, OI_OFFSET) && <Path d={pathD(airMaskOI, OI_OFFSET)!} stroke={COLOR_OI} strokeWidth={1.5} fill="none" />}
+      {pathD(airOD, 0) && <Path d={pathD(airOD, 0)!} stroke={COLOR_OD} strokeWidth={1.5} fill="none" />}
+      {pathD(airOI, 0) && <Path d={pathD(airOI, 0)!} stroke={COLOR_OI} strokeWidth={1.5} fill="none" />}
+      {pathD(airMaskOD, 0) && <Path d={pathD(airMaskOD, 0)!} stroke={COLOR_OD} strokeWidth={1.5} fill="none" />}
+      {pathD(airMaskOI, 0) && <Path d={pathD(airMaskOI, 0)!} stroke={COLOR_OI} strokeWidth={1.5} fill="none" />}
 
       {airOD.map(p => <PdfO key={p.f} cx={cxOD(p.f)} cy={toY(p.v)} />)}
       {airOI.map(p => <PdfX key={p.f} cx={cxOI(p.f)} cy={toY(p.v)} />)}
@@ -159,22 +160,19 @@ function CombinedAudioChart({ data }: { data: DatosAudiometriaTonal }) {
       {boneMaskOI.map(p => <PdfBracketLeft key={`m${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
 
       {FREQS.map(f => (
-        <Text key={f} x={toX(f)} y={PAD.top + PLOT_H + 10} style={{ fontSize: 6, textAnchor: 'middle', fill: '#333' }}>
+        <Text key={f} x={toX(f)} y={PAD.top + PLOT_H + 12} textAnchor="middle" style={{ fontSize: 7, fill: '#333' }}>
           {f >= 1000 ? `${f / 1000}k` : String(f)}
         </Text>
       ))}
-      <Text x={PAD.left + PLOT_W / 2} y={H - 2} style={{ fontSize: 7, textAnchor: 'middle', fill: '#555' }}>
+      <Text x={PAD.left + PLOT_W / 2} y={H - 4} textAnchor="middle" style={{ fontSize: 8, fill: '#555' }}>
         Frecuencia (Hz)
       </Text>
 
-      {DB_TICKS.filter((_, i) => i % 2 === 0).map(db => (
-        <Text key={db} x={PAD.left - 4} y={toY(db) + 2} style={{ fontSize: 6, textAnchor: 'end', fill: '#333' }}>
+      {DB_TICKS.filter(db => db % 20 === 0).map(db => (
+        <Text key={db} x={PAD.left - 4} y={toY(db) + 2} textAnchor="end" style={{ fontSize: 7, fill: '#333' }}>
           {db}
         </Text>
       ))}
-      <Text x={10} y={PAD.top + PLOT_H / 2} style={{ fontSize: 7, textAnchor: 'middle', fill: '#555' }}>
-        dB HL
-      </Text>
     </Svg>
   );
 }

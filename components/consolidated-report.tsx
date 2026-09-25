@@ -3,13 +3,15 @@
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { AudiometryAudiogram } from "@/components/audiometry-audiogram"
 import { LogoaudiometryChartUI } from "@/components/logoaudiometry-chart-ui"
 import { TympanometryChartUI } from "@/components/tympanometry-chart-ui"
 import { ReflexGridUI } from "@/components/reflex-grid-ui"
 import type { EvaluacionAuditiva, DatosAudiometriaTonal, DatosLogoaudiometria, DatosTimpanometria } from "@/types/evaluation"
+import { EarTitle, SectionBanner } from "@/components/clinic-ui"
+import { ClinicHeader } from "@/components/clinic-header"
 
 interface ConsolidatedReportProps {
   evaluation: EvaluacionAuditiva
@@ -45,18 +47,15 @@ export function ConsolidatedReport({ evaluation, onExportPDF }: ConsolidatedRepo
     <div className="w-full max-w-6xl mx-auto space-y-6 p-6">
       {/* Encabezado institucional */}
       <Card>
-        <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-blue-800 text-white">
-          <CardTitle className="text-2xl font-bold">
-            SISTEMA EVALUACIÓN AUDITIVA
-          </CardTitle>
-          <p className="text-sm font-medium mt-1">Universidad del Valle</p>
+        <CardHeader>
+          <ClinicHeader />
         </CardHeader>
       </Card>
 
       {/* Datos del paciente */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Datos del Paciente</CardTitle>
+          <SectionBanner>Datos del Paciente</SectionBanner>
         </CardHeader>
         <CardContent className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -88,10 +87,7 @@ export function ConsolidatedReport({ evaluation, onExportPDF }: ConsolidatedRepo
       {/* Pruebas realizadas */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <span className="text-2xl">📊</span>
-            Pruebas Realizadas
-          </CardTitle>
+          <SectionBanner>Pruebas Realizadas</SectionBanner>
         </CardHeader>
         <CardContent className="space-y-8">
           {pruebas.map((prueba, index) => (
@@ -114,7 +110,7 @@ export function ConsolidatedReport({ evaluation, onExportPDF }: ConsolidatedRepo
       {/* Datos del examinador */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Datos del Examinador</CardTitle>
+          <SectionBanner>Datos del Examinador</SectionBanner>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -135,7 +131,7 @@ export function ConsolidatedReport({ evaluation, onExportPDF }: ConsolidatedRepo
         <Button 
           onClick={onExportPDF}
           size="lg"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8"
+          className="px-8"
         >
           Exportar a PDF
         </Button>
@@ -152,14 +148,12 @@ function AudiometrySection({ data, index }: { data: DatosAudiometriaTonal; index
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-semibold text-blue-700">
-        {index}. Audiometría Tonal
-      </h3>
+      <SectionBanner>{index}. Audiometría Tonal</SectionBanner>
       
       {/* Datos numéricos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-secondary p-4 rounded-lg">
         <div>
-          <p className="font-semibold text-red-600 mb-2">Oído Derecho (OD):</p>
+          <EarTitle ear="od" className="mb-2">Oído Derecho (OD)</EarTitle>
           <div className="space-y-1 text-sm">
             {frequencies.map((freq) => {
               const value = data.oido_derecho[freq]
@@ -172,7 +166,7 @@ function AudiometrySection({ data, index }: { data: DatosAudiometriaTonal; index
           </div>
         </div>
         <div>
-          <p className="font-semibold text-blue-600 mb-2">Oído Izquierdo (OI):</p>
+          <EarTitle ear="oi" className="mb-2">Oído Izquierdo (OI)</EarTitle>
           <div className="space-y-1 text-sm">
             {frequencies.map((freq) => {
               const value = data.oido_izquierdo[freq]
@@ -200,28 +194,26 @@ function AudiometrySection({ data, index }: { data: DatosAudiometriaTonal; index
 function LogoaudiometrySection({ data, index }: { data: DatosLogoaudiometria; index: number }) {
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-semibold text-blue-700">
-        {index}. Logoaudiometría
-      </h3>
+      <SectionBanner>{index}. Logoaudiometría</SectionBanner>
       
       {/* Datos numéricos */}
-      <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg space-y-5">
+      <div className="bg-secondary p-4 rounded-lg space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <p className="font-semibold mb-2">Oído Derecho (OD):</p>
+            <EarTitle ear="od" className="mb-2">Oído Derecho (OD)</EarTitle>
             <div className="space-y-1 text-sm">
               {data.puntos.derecho.map(p => (
-                <p key={p.db} className="text-red-600">
+                <p key={p.db} className="text-od">
                   {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
                 </p>
               ))}
             </div>
           </div>
           <div>
-            <p className="font-semibold mb-2">Oído Izquierdo (OI):</p>
+            <EarTitle ear="oi" className="mb-2">Oído Izquierdo (OI)</EarTitle>
             <div className="space-y-1 text-sm">
               {data.puntos.izquierdo.map(p => (
-                <p key={p.db} className="text-blue-600">
+                <p key={p.db} className="text-oi">
                   {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
                 </p>
               ))}
@@ -235,7 +227,7 @@ function LogoaudiometrySection({ data, index }: { data: DatosLogoaudiometria; in
               <p className="font-semibold mb-2">OD Enmascarada:</p>
               <div className="space-y-1 text-sm">
                 {(data.puntos.derecho_enmascarado ?? []).map(p => (
-                  <p key={`odm-${p.db}`} className="text-red-600/80">
+                  <p key={`odm-${p.db}`} className="text-od/80">
                     {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
                   </p>
                 ))}
@@ -245,7 +237,7 @@ function LogoaudiometrySection({ data, index }: { data: DatosLogoaudiometria; in
               <p className="font-semibold mb-2">OI Enmascarada:</p>
               <div className="space-y-1 text-sm">
                 {(data.puntos.izquierdo_enmascarado ?? []).map(p => (
-                  <p key={`oim-${p.db}`} className="text-blue-600/80">
+                  <p key={`oim-${p.db}`} className="text-oi/80">
                     {p.db} dB → {p.correctas}/10 = {Math.round((p.correctas / 10) * 100)}%
                   </p>
                 ))}
@@ -269,14 +261,12 @@ function LogoaudiometrySection({ data, index }: { data: DatosLogoaudiometria; in
 function TympanometrySection({ data, index }: { data: DatosTimpanometria; index: number }) {
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-semibold text-blue-700">
-        {index}. Timpanometría
-      </h3>
+      <SectionBanner>{index}. Timpanometría</SectionBanner>
 
       {/* Datos numéricos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-secondary p-4 rounded-lg">
         <div>
-          <p className="font-semibold text-red-600 mb-2">Oído Derecho (OD):</p>
+          <EarTitle ear="od" className="mb-2">Oído Derecho (OD)</EarTitle>
           <div className="space-y-1 text-sm">
             <p>Tipo de Curva: <strong>{data.derecho.tipoCurva}</strong></p>
             <p>Presión Pico: {data.derecho.presionPico} daPa</p>
@@ -287,7 +277,7 @@ function TympanometrySection({ data, index }: { data: DatosTimpanometria; index:
           </div>
         </div>
         <div>
-          <p className="font-semibold text-blue-600 mb-2">Oído Izquierdo (OI):</p>
+          <EarTitle ear="oi" className="mb-2">Oído Izquierdo (OI)</EarTitle>
           <div className="space-y-1 text-sm">
             <p>Tipo de Curva: <strong>{data.izquierdo.tipoCurva}</strong></p>
             <p>Presión Pico: {data.izquierdo.presionPico} daPa</p>

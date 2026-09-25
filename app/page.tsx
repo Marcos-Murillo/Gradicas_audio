@@ -9,11 +9,13 @@ import { TympanometryForm } from "@/components/tympanometry-form"
 import { ExaminerForm } from "@/components/examiner-form"
 import { ConsolidatedReport } from "@/components/consolidated-report"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { SectionBanner } from "@/components/clinic-ui"
+import { ClinicHeader } from "@/components/clinic-header"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { Activity, FileText, Loader2, FolderOpen } from "lucide-react"
+import { FileText, Loader2, FolderOpen } from "lucide-react"
 import { toast } from "sonner"
 import type {
   TipoPrueba,
@@ -185,21 +187,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b-2 border-brand bg-card">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700">
-              <Activity className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold leading-tight text-foreground">
-                Sistema Evaluación Auditiva
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Universidad del Valle
-              </p>
-            </div>
-          </div>
+          <ClinicHeader />
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -221,7 +211,7 @@ export default function Home() {
           {/* Test Selector */}
           <Card>
             <CardHeader>
-              <CardTitle>Nueva Evaluación Auditiva</CardTitle>
+              <SectionBanner>Nueva Evaluación Auditiva</SectionBanner>
             </CardHeader>
             <CardContent>
               <TestSelector
@@ -235,7 +225,7 @@ export default function Home() {
           {/* Patient Form - Always visible */}
           <Card>
             <CardHeader>
-              <CardTitle>Datos del Paciente</CardTitle>
+              <SectionBanner>Datos del Paciente</SectionBanner>
             </CardHeader>
             <CardContent>
               <PatientForm
@@ -249,7 +239,7 @@ export default function Home() {
           {selectedTests.includes('tonal') && (
             <Card>
               <CardHeader>
-                <CardTitle>Audiometría Tonal</CardTitle>
+                <SectionBanner>Audiometría Tonal</SectionBanner>
               </CardHeader>
               <CardContent>
                 <AudiometryForm
@@ -263,7 +253,7 @@ export default function Home() {
           {selectedTests.includes('logoaudiometria') && (
             <Card>
               <CardHeader>
-                <CardTitle>Logoaudiometría</CardTitle>
+                <SectionBanner>Logoaudiometría</SectionBanner>
               </CardHeader>
               <CardContent>
                 <LogoaudiometryForm
@@ -277,7 +267,7 @@ export default function Home() {
           {selectedTests.includes('timpanometria') && (
             <Card>
               <CardHeader>
-                <CardTitle>Timpanometría</CardTitle>
+                <SectionBanner>Timpanometría</SectionBanner>
               </CardHeader>
               <CardContent>
                 <TympanometryForm
@@ -291,7 +281,7 @@ export default function Home() {
           {/* Examiner Form - Always visible */}
           <Card>
             <CardHeader>
-              <CardTitle>Datos del Examinador</CardTitle>
+              <SectionBanner>Datos del Examinador</SectionBanner>
             </CardHeader>
             <CardContent>
               <ExaminerForm
@@ -309,7 +299,7 @@ export default function Home() {
               onClick={handleGenerateReport}
               disabled={isSaving}
               size="lg"
-              className="gap-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white hover:from-blue-700 hover:to-blue-900 px-8 disabled:opacity-50"
+              className="gap-2 px-8 disabled:opacity-50"
             >
               {isSaving ? (
                 <>
@@ -352,7 +342,7 @@ export default function Home() {
       </Dialog>
 
       {/* Footer */}
-      <footer className="mt-12 border-t border-border bg-card/50 px-4 py-6 text-center text-xs text-muted-foreground lg:px-8">
+      <footer className="mt-12 border-t-2 border-brand bg-card px-4 py-6 text-center text-xs text-navy lg:px-8">
         Sistema de Evaluación Auditiva Profesional &mdash; Universidad del Valle
       </footer>
     </div>

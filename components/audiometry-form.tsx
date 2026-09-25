@@ -7,6 +7,7 @@ import type { Path, UseFormReturn } from "react-hook-form";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { EarTitle, SectionBanner } from "@/components/clinic-ui";
 import {
   Form,
   FormControl,
@@ -147,17 +148,17 @@ export function AudiometryForm({ onSubmit, initialData }: AudiometryFormProps) {
 
         {/* ── Vía Aérea ── */}
         <div className="space-y-4">
-          <h3 className="text-base font-semibold border-b pb-1">Vía Aérea — Sin enmascarar</h3>
+          <SectionBanner>Vía Aérea — Sin enmascarar</SectionBanner>
           <p className="text-xs text-muted-foreground">
-            OD: símbolo <span className="font-bold text-red-600">O</span> &nbsp;|&nbsp;
-            OI: símbolo <span className="font-bold text-blue-600">X</span>
+            OD: símbolo <span className="font-bold text-od">O</span> &nbsp;|&nbsp;
+            OI: símbolo <span className="font-bold text-oi">X</span>
           </p>
 
-          <FrequencyRow form={form} prefix="oido_derecho" label="Oído Derecho (OD)" color="#dc2626"
-            symbol={<svg width={14} height={14}><circle cx={7} cy={7} r={5} stroke="#dc2626" strokeWidth={2} fill="none" /></svg>}
+          <FrequencyRow form={form} prefix="oido_derecho" label="Oído Derecho (OD)" color="#d11c1c"
+            symbol={<svg width={14} height={14}><circle cx={7} cy={7} r={5} stroke="#d11c1c" strokeWidth={2} fill="none" /></svg>}
           />
-          <FrequencyRow form={form} prefix="oido_izquierdo" label="Oído Izquierdo (OI)" color="#2563eb"
-            symbol={<svg width={14} height={14}><line x1={3} y1={3} x2={11} y2={11} stroke="#2563eb" strokeWidth={2.5} strokeLinecap="round" /><line x1={11} y1={3} x2={3} y2={11} stroke="#2563eb" strokeWidth={2.5} strokeLinecap="round" /></svg>}
+          <FrequencyRow form={form} prefix="oido_izquierdo" label="Oído Izquierdo (OI)" color="#1452d1"
+            symbol={<svg width={14} height={14}><line x1={3} y1={3} x2={11} y2={11} stroke="#1452d1" strokeWidth={2.5} strokeLinecap="round" /><line x1={11} y1={3} x2={3} y2={11} stroke="#1452d1" strokeWidth={2.5} strokeLinecap="round" /></svg>}
           />
 
           {(() => {
@@ -185,17 +186,17 @@ export function AudiometryForm({ onSubmit, initialData }: AudiometryFormProps) {
             {showEnmascarado ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             Vía Aérea — Enmascarada (opcional)
             <span className="text-xs">
-              OD: <span className="text-red-600 font-bold">△</span> &nbsp;OI: <span className="text-blue-600 font-bold">□</span>
+              OD: <span className="text-od font-bold">△</span> &nbsp;OI: <span className="text-oi font-bold">□</span>
             </span>
           </button>
 
           {showEnmascarado && (
             <div className="space-y-4 pl-4 border-l-2 border-muted">
-              <FrequencyRow form={form} prefix="oido_derecho_enmascarado" label="OD Enmascarado" color="#dc2626"
-                symbol={<svg width={14} height={14}><polygon points="7,2 13,12 1,12" stroke="#dc2626" strokeWidth={2} fill="none" /></svg>}
+              <FrequencyRow form={form} prefix="oido_derecho_enmascarado" label="OD Enmascarado" color="#d11c1c"
+                symbol={<svg width={14} height={14}><polygon points="7,2 13,12 1,12" stroke="#d11c1c" strokeWidth={2} fill="none" /></svg>}
               />
-              <FrequencyRow form={form} prefix="oido_izquierdo_enmascarado" label="OI Enmascarado" color="#2563eb"
-                symbol={<svg width={14} height={14}><rect x={2} y={2} width={10} height={10} stroke="#2563eb" strokeWidth={2} fill="none" /></svg>}
+              <FrequencyRow form={form} prefix="oido_izquierdo_enmascarado" label="OI Enmascarado" color="#1452d1"
+                symbol={<svg width={14} height={14}><rect x={2} y={2} width={10} height={10} stroke="#1452d1" strokeWidth={2} fill="none" /></svg>}
               />
             </div>
           )}
@@ -211,29 +212,29 @@ export function AudiometryForm({ onSubmit, initialData }: AudiometryFormProps) {
             {showOseo ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             Vía Ósea (opcional)
             <span className="text-xs">
-              OD sin enmasc.: <span className="text-red-600 font-bold">&lt;</span> &nbsp;
-              OI sin enmasc.: <span className="text-blue-600 font-bold">&gt;</span> &nbsp;
-              OD enmasc.: <span className="text-red-600 font-bold">[</span> &nbsp;
-              OI enmasc.: <span className="text-blue-600 font-bold">]</span>
+              OD sin enmasc.: <span className="text-od font-bold">&lt;</span> &nbsp;
+              OI sin enmasc.: <span className="text-oi font-bold">&gt;</span> &nbsp;
+              OD enmasc.: <span className="text-od font-bold">[</span> &nbsp;
+              OI enmasc.: <span className="text-oi font-bold">]</span>
             </span>
           </button>
 
           {showOseo && (
             <div className="space-y-4 pl-4 border-l-2 border-muted">
               <h4 className="text-sm font-medium text-muted-foreground">Sin enmascarar</h4>
-              <FrequencyRow form={form} prefix="oseo_derecho" label="OD Óseo" color="#dc2626"
-                symbol={<svg width={14} height={14}><line x1={12} y1={2} x2={2} y2={7} stroke="#dc2626" strokeWidth={2} strokeLinecap="round" /><line x1={2} y1={7} x2={12} y2={12} stroke="#dc2626" strokeWidth={2} strokeLinecap="round" /></svg>}
+              <FrequencyRow form={form} prefix="oseo_derecho" label="OD Óseo" color="#d11c1c"
+                symbol={<svg width={14} height={14}><line x1={12} y1={2} x2={2} y2={7} stroke="#d11c1c" strokeWidth={2} strokeLinecap="round" /><line x1={2} y1={7} x2={12} y2={12} stroke="#d11c1c" strokeWidth={2} strokeLinecap="round" /></svg>}
               />
-              <FrequencyRow form={form} prefix="oseo_izquierdo" label="OI Óseo" color="#2563eb"
-                symbol={<svg width={14} height={14}><line x1={2} y1={2} x2={12} y2={7} stroke="#2563eb" strokeWidth={2} strokeLinecap="round" /><line x1={12} y1={7} x2={2} y2={12} stroke="#2563eb" strokeWidth={2} strokeLinecap="round" /></svg>}
+              <FrequencyRow form={form} prefix="oseo_izquierdo" label="OI Óseo" color="#1452d1"
+                symbol={<svg width={14} height={14}><line x1={2} y1={2} x2={12} y2={7} stroke="#1452d1" strokeWidth={2} strokeLinecap="round" /><line x1={12} y1={7} x2={2} y2={12} stroke="#1452d1" strokeWidth={2} strokeLinecap="round" /></svg>}
               />
 
               <h4 className="text-sm font-medium text-muted-foreground">Enmascarada</h4>
-              <FrequencyRow form={form} prefix="oseo_derecho_enmascarado" label="OD Óseo Enmasc." color="#dc2626"
-                symbol={<svg width={14} height={14}><line x1={7} y1={1} x2={7} y2={13} stroke="#dc2626" strokeWidth={2} strokeLinecap="round" /><line x1={7} y1={1} x2={12} y2={1} stroke="#dc2626" strokeWidth={2} strokeLinecap="round" /><line x1={7} y1={13} x2={12} y2={13} stroke="#dc2626" strokeWidth={2} strokeLinecap="round" /></svg>}
+              <FrequencyRow form={form} prefix="oseo_derecho_enmascarado" label="OD Óseo Enmasc." color="#d11c1c"
+                symbol={<svg width={14} height={14}><line x1={7} y1={1} x2={7} y2={13} stroke="#d11c1c" strokeWidth={2} strokeLinecap="round" /><line x1={7} y1={1} x2={12} y2={1} stroke="#d11c1c" strokeWidth={2} strokeLinecap="round" /><line x1={7} y1={13} x2={12} y2={13} stroke="#d11c1c" strokeWidth={2} strokeLinecap="round" /></svg>}
               />
-              <FrequencyRow form={form} prefix="oseo_izquierdo_enmascarado" label="OI Óseo Enmasc." color="#2563eb"
-                symbol={<svg width={14} height={14}><line x1={7} y1={1} x2={7} y2={13} stroke="#2563eb" strokeWidth={2} strokeLinecap="round" /><line x1={7} y1={1} x2={2} y2={1} stroke="#2563eb" strokeWidth={2} strokeLinecap="round" /><line x1={7} y1={13} x2={2} y2={13} stroke="#2563eb" strokeWidth={2} strokeLinecap="round" /></svg>}
+              <FrequencyRow form={form} prefix="oseo_izquierdo_enmascarado" label="OI Óseo Enmasc." color="#1452d1"
+                symbol={<svg width={14} height={14}><line x1={7} y1={1} x2={7} y2={13} stroke="#1452d1" strokeWidth={2} strokeLinecap="round" /><line x1={7} y1={1} x2={2} y2={1} stroke="#1452d1" strokeWidth={2} strokeLinecap="round" /><line x1={7} y1={13} x2={2} y2={13} stroke="#1452d1" strokeWidth={2} strokeLinecap="round" /></svg>}
               />
             </div>
           )}

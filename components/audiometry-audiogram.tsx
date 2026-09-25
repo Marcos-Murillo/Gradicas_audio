@@ -3,35 +3,38 @@
 import React from "react"
 import type { DatosAudiometriaTonal, FrecuenciasAudiometry } from "@/types/evaluation"
 
+const GRID_FREQS = [125, 250, 500, 750, 1000, 1500, 2000, 3000, 4000, 6000, 8000]
+const FUNITS = [0, 1, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8]
 const FREQS = [250, 500, 1000, 2000, 3000, 4000]
-const DB_MAX = 130
-const DB_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130]
+const DB_MIN = 0
+const DB_MAX = 120
+const DB_STEP = 10
+const DB_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]
 
-const W = 520
-const H = 360
-const PAD = { top: 24, right: 28, bottom: 52, left: 56 }
-const PLOT_W = W - PAD.left - PAD.right
-const PLOT_H = H - PAD.top - PAD.bottom
+const AG = { left: 40, top: 28, unit: 34, rowh: 9 }
+const PLOT_W = FUNITS[FUNITS.length - 1] * AG.unit
+const PLOT_H = ((DB_MAX - DB_MIN) / DB_STEP) * AG.rowh
+const W = AG.left + PLOT_W + 16
+const H = AG.top + PLOT_H + 36
 
-// Desplazamiento ASHA: OD a la derecha, OI a la izquierda en cada frecuencia
-const OD_OFFSET = 6
-const OI_OFFSET = -6
+const COLOR_OD = "#d11c1c"
+const COLOR_OI = "#1452d1"
 
-const COLOR_OD = "#dc2626"
-const COLOR_OI = "#2563eb"
+function freqIndex(freq: number) {
+  return GRID_FREQS.indexOf(freq)
+}
 
 function toX(freq: number) {
-  const logMin = Math.log10(250)
-  const logMax = Math.log10(4000)
-  return PAD.left + ((Math.log10(freq) - logMin) / (logMax - logMin)) * PLOT_W
+  const i = freqIndex(freq)
+  return AG.left + (i < 0 ? 0 : FUNITS[i]) * AG.unit
 }
 
 function toY(db: number) {
-  return PAD.top + (db / DB_MAX) * PLOT_H
+  return AG.top + ((db - DB_MIN) / DB_STEP) * AG.rowh
 }
 
-function cxOD(freq: number) { return toX(freq) + OD_OFFSET }
-function cxOI(freq: number) { return toX(freq) + OI_OFFSET }
+function cxOD(freq: number) { return toX(freq) }
+function cxOI(freq: number) { return toX(freq) }
 
 // ─── ASHA Symbols ────────────────────────────────────────────────────────────
 
@@ -107,17 +110,12 @@ function SymbolBracketLeft({ cx, cy }: { cx: number; cy: number }) {
 }
 
 function SymbolNoResponse({ cx, cy, isLeft }: { cx: number; cy: number; isLeft: boolean }) {
-  const len = 10
-  const dx = isLeft ? len * 0.707 : -len * 0.707
-  const dy = len * 0.707
   const color = isLeft ? COLOR_OI : COLOR_OD
   return (
-    <line
-      x1={cx} y1={cy}
-      x2={cx + dx} y2={cy + dy}
-      stroke={color} strokeWidth={2} strokeLinecap="round"
-      markerEnd={`url(#arrow-${isLeft ? "left" : "right"})`}
-    />
+    <g>
+      <line x1={cx} y1={cy + 6} x2={cx} y2={cy + 17} stroke={color} strokeWidth={2} />
+      <polyline points={`${cx - 4},${cy + 12} ${cx},${cy + 17} ${cx + 4},${cy + 12}`} fill="none" stroke={color} strokeWidth={2} />
+    </g>
   )
 }
 
@@ -133,13 +131,80 @@ function buildPoints(data: EarData | undefined) {
     .filter((p): p is { f: number; v: number } => p.v !== undefined)
 }
 
-function buildPolyline(pts: { f: number; v: number }[], xOffset: number) {
+function buildPolyline(pts: { f: number; v: number }[]) {
   return pts.length >= 2
-    ? pts.map(p => `${toX(p.f) + xOffset},${toY(p.v)}`).join(" ")
+    ? pts.map(p => `${toX(p.f)},${toY(p.v)}`).join(" ")
     : null
 }
 
 // ─── Combined audiogram (OD + OI en una sola gráfica) ────────────────────────
+
+function AudiogramGrid({ color }: { color: string }) {
+  return (
+    <g>
+      <rect x={AG.left} y={toY(0)} width={PLOT_W} height={toY(20) - toY(0)} fill="#eef1f5" />
+      {GRID_FREQS.map((f, i) => (
+        <line key={f} x1={AG.left + FUNITS[i] * AG.unit} y1={AG.top} x2={AG.left + FUNITS[i] * AG.unit} y2={AG.top + PLOT_H} stroke="#dde3ea" strokeWidth={1} />
+      ))}
+      {DB_TICKS.map(db => (
+        <line key={db} x1={AG.left} y1={toY(db)} x2={AG.left + PLOT_W} y2={toY(db)} stroke={db % 10 === 0 ? "#c9d0d9" : "#eef1f5"} strokeWidth={1} />
+      ))}
+      <line x1={AG.left} y1={toY(0)} x2={AG.left + PLOT_W} y2={toY(0)} stroke="#9aa6b4" strokeWidth={1.3} />
+      <line x1={AG.left} y1={toY(20)} x2={AG.left + PLOT_W} y2={toY(20)} stroke="#9aa6b4" strokeWidth={1.3} />
+      <rect x={AG.left} y={AG.top} width={PLOT_W} height={PLOT_H} fill="none" stroke="#9aa6b4" strokeWidth={1.3} />
+      {GRID_FREQS.map((f, i) => {
+        if (f === 750 || f === 1500) return null
+        return (
+          <text key={f} x={AG.left + FUNITS[i] * AG.unit} y={AG.top - 8} textAnchor="middle" fontSize={f === 3000 || f === 6000 ? 7 : 9} fontWeight={600} fill="#1a2230">
+            {f}
+          </text>
+        )
+      })}
+      {DB_TICKS.map(db => (
+        <text key={`l-${db}`} x={AG.left - 6} y={toY(db) + 3} textAnchor="end" fontSize={8} fill="#5b6675">{db}</text>
+      ))}
+      <text x={12} y={AG.top + PLOT_H / 2} textAnchor="middle" fontSize={8} fill="#5b6675" transform={`rotate(-90 12 ${AG.top + PLOT_H / 2})`}>
+        Intensidad (dB HL)
+      </text>
+      <text x={AG.left + PLOT_W / 2} y={H - 6} textAnchor="middle" fontSize={8} fill={color} fontWeight={700}>
+        Frecuencia (Hz)
+      </text>
+    </g>
+  )
+}
+
+function EarChart({
+  title,
+  color,
+  air,
+  airMask,
+  bone,
+  boneMask,
+  symbols,
+}: {
+  title: string
+  color: string
+  air: { f: number; v: number }[]
+  airMask: { f: number; v: number }[]
+  bone: { f: number; v: number }[]
+  boneMask: { f: number; v: number }[]
+  symbols: React.ReactNode
+}) {
+  return (
+    <div className="min-w-0 flex-1">
+      <p className="mb-1 text-sm font-extrabold uppercase tracking-wide" style={{ color }}>{title}</p>
+      <p className="mb-1 text-center text-[11px] text-muted-foreground">Frecuencia (Hz)</p>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full border border-[#9aa6b4] bg-white" role="img" aria-label={title}>
+        <AudiogramGrid color={color} />
+        {buildPolyline(bone) && <polyline points={buildPolyline(bone)!} fill="none" stroke={color} strokeWidth={2} strokeDasharray="6 4" />}
+        {buildPolyline(boneMask) && <polyline points={buildPolyline(boneMask)!} fill="none" stroke={color} strokeWidth={2} strokeDasharray="6 4" />}
+        {buildPolyline(air) && <polyline points={buildPolyline(air)!} fill="none" stroke={color} strokeWidth={2} />}
+        {buildPolyline(airMask) && <polyline points={buildPolyline(airMask)!} fill="none" stroke={color} strokeWidth={2} />}
+        {symbols}
+      </svg>
+    </div>
+  )
+}
 
 function CombinedAudiogramSVG({ data }: { data: DatosAudiometriaTonal }) {
   const airOD = buildPoints(data.oido_derecho)
@@ -154,114 +219,51 @@ function CombinedAudiogramSVG({ data }: { data: DatosAudiometriaTonal }) {
   const noRespOI: NoRespData = data.sin_respuesta_izquierdo ?? {}
 
   return (
-    <div className="flex flex-col items-center w-full">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-3xl" style={{ display: "block" }}>
-        <defs>
-          <marker id="arrow-right" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill={COLOR_OD} />
-          </marker>
-          <marker id="arrow-left" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L6,3 z" fill={COLOR_OI} />
-          </marker>
-        </defs>
-
-        <rect x={PAD.left} y={PAD.top} width={PLOT_W} height={PLOT_H} fill="white" stroke="#555" strokeWidth={1} />
-
-        {DB_TICKS.map(db => (
-          <line key={db}
-            x1={PAD.left} y1={toY(db)} x2={PAD.left + PLOT_W} y2={toY(db)}
-            stroke={db === 0 ? "#aaa" : "#e5e7eb"}
-            strokeWidth={db === 0 ? 0.8 : 0.5}
-          />
-        ))}
-
-        {FREQS.map(f => (
-          <line key={f}
-            x1={toX(f)} y1={PAD.top} x2={toX(f)} y2={PAD.top + PLOT_H}
-            stroke="#e5e7eb" strokeWidth={0.5}
-          />
-        ))}
-
-        {/* Vía ósea — línea punteada */}
-        {buildPolyline(boneOD, OD_OFFSET) && (
-          <polyline points={buildPolyline(boneOD, OD_OFFSET)!} fill="none" stroke={COLOR_OD} strokeWidth={1.5} strokeDasharray="5,3" />
-        )}
-        {buildPolyline(boneOI, OI_OFFSET) && (
-          <polyline points={buildPolyline(boneOI, OI_OFFSET)!} fill="none" stroke={COLOR_OI} strokeWidth={1.5} strokeDasharray="5,3" />
-        )}
-        {buildPolyline(boneMaskOD, OD_OFFSET) && (
-          <polyline points={buildPolyline(boneMaskOD, OD_OFFSET)!} fill="none" stroke={COLOR_OD} strokeWidth={1.5} strokeDasharray="5,3" />
-        )}
-        {buildPolyline(boneMaskOI, OI_OFFSET) && (
-          <polyline points={buildPolyline(boneMaskOI, OI_OFFSET)!} fill="none" stroke={COLOR_OI} strokeWidth={1.5} strokeDasharray="5,3" />
-        )}
-
-        {/* Vía aérea — línea sólida (sin enmascarar y enmascarada) */}
-        {buildPolyline(airOD, OD_OFFSET) && (
-          <polyline points={buildPolyline(airOD, OD_OFFSET)!} fill="none" stroke={COLOR_OD} strokeWidth={2} />
-        )}
-        {buildPolyline(airOI, OI_OFFSET) && (
-          <polyline points={buildPolyline(airOI, OI_OFFSET)!} fill="none" stroke={COLOR_OI} strokeWidth={2} />
-        )}
-        {buildPolyline(airMaskOD, OD_OFFSET) && (
-          <polyline points={buildPolyline(airMaskOD, OD_OFFSET)!} fill="none" stroke={COLOR_OD} strokeWidth={2} />
-        )}
-        {buildPolyline(airMaskOI, OI_OFFSET) && (
-          <polyline points={buildPolyline(airMaskOI, OI_OFFSET)!} fill="none" stroke={COLOR_OI} strokeWidth={2} />
-        )}
-
-        {/* Símbolos vía aérea */}
-        {airOD.map(p => <SymbolO key={`od-${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
-        {airOI.map(p => <SymbolX key={`oi-${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
-        {airMaskOD.map(p => <SymbolTriangle key={`odm-${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
-        {airMaskOI.map(p => <SymbolSquare key={`oim-${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
-
-        {/* Símbolos vía ósea */}
-        {boneOD.map(p => <SymbolAngleLeft key={`bod-${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
-        {boneOI.map(p => <SymbolAngleRight key={`boi-${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
-        {boneMaskOD.map(p => <SymbolBracketRight key={`bom-${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
-        {boneMaskOI.map(p => <SymbolBracketLeft key={`boim-${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
-
-        {/* Sin respuesta */}
-        {FREQS.map(f => {
-          const key = String(f) as keyof FrecuenciasAudiometry
-          const arrows: React.ReactNode[] = []
-          if (noRespOD[key]) {
-            const airVal = data.oido_derecho[key]
-            arrows.push(
-              <SymbolNoResponse key={`nr-od-${f}`} cx={cxOD(f)} cy={airVal !== undefined ? toY(airVal) : toY(120)} isLeft={false} />
-            )
-          }
-          if (noRespOI[key]) {
-            const airVal = data.oido_izquierdo[key]
-            arrows.push(
-              <SymbolNoResponse key={`nr-oi-${f}`} cx={cxOI(f)} cy={airVal !== undefined ? toY(airVal) : toY(120)} isLeft={true} />
-            )
-          }
-          return arrows
-        })}
-
-        {FREQS.map(f => (
-          <text key={f} x={toX(f)} y={PAD.top + PLOT_H + 14} textAnchor="middle" fontSize={10} fill="#555">
-            {f >= 1000 ? `${f / 1000}k` : f}
-          </text>
-        ))}
-
-        <text x={PAD.left + PLOT_W / 2} y={H - 4} textAnchor="middle" fontSize={10} fill="#666">
-          Frecuencia (Hz)
-        </text>
-
-        {DB_TICKS.filter((_, i) => i % 2 === 0).map(db => (
-          <text key={db} x={PAD.left - 6} y={toY(db) + 3} textAnchor="end" fontSize={9} fill="#555">
-            {db}
-          </text>
-        ))}
-
-        <text x={14} y={PAD.top + PLOT_H / 2} textAnchor="middle" fontSize={10} fill="#666"
-          transform={`rotate(-90, 14, ${PAD.top + PLOT_H / 2})`}>
-          dB HL
-        </text>
-      </svg>
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <EarChart
+        title="Oído Derecho"
+        color={COLOR_OD}
+        air={airOD}
+        airMask={airMaskOD}
+        bone={boneOD}
+        boneMask={boneMaskOD}
+        symbols={
+          <>
+            {airOD.map(p => <SymbolO key={`od-${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
+            {airMaskOD.map(p => <SymbolTriangle key={`odm-${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
+            {boneOD.map(p => <SymbolAngleLeft key={`bod-${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
+            {boneMaskOD.map(p => <SymbolBracketRight key={`bom-${p.f}`} cx={cxOD(p.f)} cy={toY(p.v)} />)}
+            {FREQS.map(f => {
+              const key = String(f) as keyof FrecuenciasAudiometry
+              if (!noRespOD[key]) return null
+              const airVal = data.oido_derecho[key]
+              return <SymbolNoResponse key={`nr-od-${f}`} cx={cxOD(f)} cy={airVal !== undefined ? toY(airVal) : toY(120)} isLeft={false} />
+            })}
+          </>
+        }
+      />
+      <EarChart
+        title="Oído Izquierdo"
+        color={COLOR_OI}
+        air={airOI}
+        airMask={airMaskOI}
+        bone={boneOI}
+        boneMask={boneMaskOI}
+        symbols={
+          <>
+            {airOI.map(p => <SymbolX key={`oi-${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
+            {airMaskOI.map(p => <SymbolSquare key={`oim-${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
+            {boneOI.map(p => <SymbolAngleRight key={`boi-${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
+            {boneMaskOI.map(p => <SymbolBracketLeft key={`boim-${p.f}`} cx={cxOI(p.f)} cy={toY(p.v)} />)}
+            {FREQS.map(f => {
+              const key = String(f) as keyof FrecuenciasAudiometry
+              if (!noRespOI[key]) return null
+              const airVal = data.oido_izquierdo[key]
+              return <SymbolNoResponse key={`nr-oi-${f}`} cx={cxOI(f)} cy={airVal !== undefined ? toY(airVal) : toY(120)} isLeft />
+            })}
+          </>
+        }
+      />
     </div>
   )
 }

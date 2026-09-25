@@ -13,13 +13,11 @@ export function Sidebar() {
       href: "/",
       label: "Inicio",
       icon: Home,
-      color: "text-blue-500",
     },
     {
       href: "/saved",
       label: "Guardadas",
       icon: Database,
-      color: "text-green-500",
     },
   ]
 
@@ -28,9 +26,9 @@ export function Sidebar() {
       <div className="flex h-full flex-col items-center py-6">
         <Link
           href="/"
-          className="mb-8 flex h-12 w-12 items-center justify-center rounded-lg bg-primary"
+          className="mb-8 flex h-12 w-12 items-center justify-center rounded-lg bg-brand"
         >
-          <Activity className="h-6 w-6 text-primary-foreground" />
+          <Activity className="h-6 w-6 text-white" />
         </Link>
 
         <nav className="flex flex-1 flex-col gap-4">
@@ -45,11 +43,11 @@ export function Sidebar() {
                 className={cn(
                   "flex h-14 w-14 flex-col items-center justify-center gap-1 rounded-lg transition-colors",
                   isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 )}
               >
-                <Icon className={cn("h-5 w-5", isActive && link.color)} />
+                <Icon className="h-5 w-5" />
                 <span className="text-xs font-medium">{link.label}</span>
               </Link>
             )

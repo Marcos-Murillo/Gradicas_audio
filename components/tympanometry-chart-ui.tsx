@@ -32,7 +32,7 @@ export function TympanometryChartUI({ data }: { data: DatosTimpanometria }) {
         `OI — Tipo ${data.izquierdo.tipoCurva} | ${data.izquierdo.presionPico} daPa | ${data.izquierdo.cumplimiento} ml`,
       ]}
       coordinateNames={{ x: "Presión (daPa)", y: "Cumplimiento (ml)" }}
-      colors={["#dc2626", "#2563eb"]}
+      colors={["#d11c1c", "#1452d1"]}
       coordinates={[coordsOD, coordsOI]}
     />
   )

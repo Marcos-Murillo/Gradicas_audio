@@ -109,34 +109,34 @@ export function ReflexGridUI({ data }: ReflexGridProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sonda OD */}
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-red-600 text-center">Sonda OD (Oído Derecho)</p>
+          <p className="text-center text-xs font-extrabold uppercase tracking-[0.4px] text-od">Sonda OD (Oído Derecho)</p>
           <div className="grid grid-cols-2 gap-2">
             {FREQS.map(f => (
               <ReflexCell key={`od-ipsi-${f}`}
                 freq={f} umbral={derecho.ipsilateral?.[f]}
-                tipo="ipsilateral" sondaLabel="OD" color="#dc2626" />
+                tipo="ipsilateral" sondaLabel="OD" color="#d11c1c" />
             ))}
             {FREQS.map(f => (
               <ReflexCell key={`od-contra-${f}`}
                 freq={f} umbral={derecho.contralateral?.[f]}
-                tipo="contralateral" sondaLabel="OD" color="#dc2626" />
+                tipo="contralateral" sondaLabel="OD" color="#d11c1c" />
             ))}
           </div>
         </div>
 
         {/* Sonda OI */}
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-blue-600 text-center">Sonda OI (Oído Izquierdo)</p>
+          <p className="text-center text-xs font-extrabold uppercase tracking-[0.4px] text-oi">Sonda OI (Oído Izquierdo)</p>
           <div className="grid grid-cols-2 gap-2">
             {FREQS.map(f => (
               <ReflexCell key={`oi-ipsi-${f}`}
                 freq={f} umbral={izquierdo.ipsilateral?.[f]}
-                tipo="ipsilateral" sondaLabel="OI" color="#2563eb" />
+                tipo="ipsilateral" sondaLabel="OI" color="#1452d1" />
             ))}
             {FREQS.map(f => (
               <ReflexCell key={`oi-contra-${f}`}
                 freq={f} umbral={izquierdo.contralateral?.[f]}
-                tipo="contralateral" sondaLabel="OI" color="#2563eb" />
+                tipo="contralateral" sondaLabel="OI" color="#1452d1" />
             ))}
           </div>
         </div>

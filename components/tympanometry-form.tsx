@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { EarTitle } from "@/components/clinic-ui";
 import { timpanometriaSchema } from "@/lib/validation-schemas";
 import type { DatosTimpanometria, TipoCurvaTimpanometrica, FrecuenciaReflejo, UmbralReflejo } from "@/types/evaluation";
 
@@ -147,7 +148,7 @@ export function TympanometryForm({ onSubmit, initialData }: TympanometryFormProp
 
         {/* ── Timpanograma OD ── */}
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-red-600 border-b pb-1">Oído Derecho (OD)</h3>
+          <EarTitle ear="od">Oído Derecho (OD)</EarTitle>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <FormField control={form.control} name="derecho.tipoCurva" render={({ field }) => (
               <FormItem>
@@ -216,7 +217,7 @@ export function TympanometryForm({ onSubmit, initialData }: TympanometryFormProp
 
         {/* ── Timpanograma OI ── */}
         <div className="space-y-4">
-          <h3 className="text-base font-semibold text-blue-600 border-b pb-1">Oído Izquierdo (OI)</h3>
+          <EarTitle ear="oi">Oído Izquierdo (OI)</EarTitle>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <FormField control={form.control} name="izquierdo.tipoCurva" render={({ field }) => (
               <FormItem>
@@ -296,7 +297,7 @@ export function TympanometryForm({ onSubmit, initialData }: TympanometryFormProp
             <div className="space-y-5 pl-4 border-l-2 border-muted">
               <ReflexTable
                 label="Sonda en Oído Derecho (OD)"
-                color="#dc2626"
+                color="#d11c1c"
                 ipsi={reflexOD.ipsilateral}
                 contra={reflexOD.contralateral}
                 onChangeIpsi={(f, v) => updateReflexOD('ipsilateral', f, v)}
@@ -304,7 +305,7 @@ export function TympanometryForm({ onSubmit, initialData }: TympanometryFormProp
               />
               <ReflexTable
                 label="Sonda en Oído Izquierdo (OI)"
-                color="#2563eb"
+                color="#1452d1"
                 ipsi={reflexOI.ipsilateral}
                 contra={reflexOI.contralateral}
                 onChangeIpsi={(f, v) => updateReflexOI('ipsilateral', f, v)}

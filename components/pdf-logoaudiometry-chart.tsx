@@ -10,11 +10,14 @@ const styles = StyleSheet.create({
   legendText: { fontSize: 7 },
 });
 
-const VW = 460;
-const VH = 240;
-const PAD = { top: 14, right: 16, bottom: 40, left: 44 };
-const PLOT_W = VW - PAD.left - PAD.right;
-const PLOT_H = VH - PAD.top - PAD.bottom;
+const INTS: number[] = [];
+for (let i = 0; i <= 110; i += 10) INTS.push(i);
+const LG = { left: 36, top: 16, colw: 28, rowh: 12 };
+const PLOT_W = (INTS.length - 1) * LG.colw;
+const PLOT_H = 10 * LG.rowh;
+const PAD = { top: LG.top, right: 10, bottom: 28, left: LG.left };
+const VW = LG.left + PLOT_W + 10;
+const VH = LG.top + PLOT_H + PAD.bottom;
 const Y_MAX = 100;
 
 type Pt = { x: number; y: number };
@@ -26,16 +29,8 @@ function toPts(puntos: PuntoLogoaudiometria[]): Pt[] {
     .sort((a, b) => a.x - b.x);
 }
 
-function computeXRange(all: Pt[]): { xMin: number; xMax: number } {
-  if (all.length === 0) return { xMin: 0, xMax: 100 };
-  const xs = all.map(p => p.x);
-  const min = Math.min(...xs);
-  const max = Math.max(...xs);
-  const pad = Math.max(10, Math.round((max - min) * 0.15));
-  return {
-    xMin: Math.max(0, Math.floor((min - pad) / 10) * 10),
-    xMax: Math.ceil((max + pad) / 10) * 10,
-  };
+function computeXRange(): { xMin: number; xMax: number } {
+  return { xMin: 0, xMax: 110 };
 }
 
 function toSvgX(x: number, xMin: number, xMax: number) {
@@ -53,9 +48,8 @@ function buildPath(pts: Pt[], xMin: number, xMax: number): string {
 }
 
 function xTicks(xMin: number, xMax: number): number[] {
-  const step = xMax - xMin <= 40 ? 5 : 10;
   const ticks: number[] = [];
-  for (let v = xMin; v <= xMax; v += step) ticks.push(v);
+  for (let v = xMin; v <= xMax; v += 20) ticks.push(v);
   return ticks;
 }
 
@@ -77,7 +71,7 @@ export function PDFLogoaudiometryChart({ data }: { data: DatosLogoaudiometria })
     );
   }
 
-  const { xMin, xMax } = computeXRange(all);
+  const { xMin, xMax } = computeXRange();
   const xTickValues = xTicks(xMin, xMax);
   const hasMasked = ptsODm.length > 0 || ptsOIm.length > 0;
 
@@ -98,54 +92,63 @@ export function PDFLogoaudiometryChart({ data }: { data: DatosLogoaudiometria })
           </G>
         ))}
 
-        {buildPath(ptsOD, xMin, xMax) ? <Path d={buildPath(ptsOD, xMin, xMax)} fill="none" stroke="#cc0000" strokeWidth={1.8} /> : null}
-        {buildPath(ptsOI, xMin, xMax) ? <Path d={buildPath(ptsOI, xMin, xMax)} fill="none" stroke="#0000cc" strokeWidth={1.8} /> : null}
+        {buildPath(ptsOD, xMin, xMax) ? <Path d={buildPath(ptsOD, xMin, xMax)} fill="none" stroke="#d11c1c" strokeWidth={1.8} /> : null}
+        {buildPath(ptsOI, xMin, xMax) ? <Path d={buildPath(ptsOI, xMin, xMax)} fill="none" stroke="#1452d1" strokeWidth={1.8} /> : null}
         {hasMasked && buildPath(ptsODm, xMin, xMax) ? (
-          <Path d={buildPath(ptsODm, xMin, xMax)} fill="none" stroke="#cc0000" strokeWidth={1.4} strokeDasharray="3,2" />
+          <Path d={buildPath(ptsODm, xMin, xMax)} fill="none" stroke="#d11c1c" strokeWidth={1.4} strokeDasharray="3,2" />
         ) : null}
         {hasMasked && buildPath(ptsOIm, xMin, xMax) ? (
-          <Path d={buildPath(ptsOIm, xMin, xMax)} fill="none" stroke="#0000cc" strokeWidth={1.4} strokeDasharray="3,2" />
+          <Path d={buildPath(ptsOIm, xMin, xMax)} fill="none" stroke="#1452d1" strokeWidth={1.4} strokeDasharray="3,2" />
         ) : null}
 
-        {ptsOD.map((p, i) => <Circle key={`od-${i}`} cx={toSvgX(p.x, xMin, xMax)} cy={toSvgY(p.y)} r={3} fill="#cc0000" />)}
-        {ptsOI.map((p, i) => <Circle key={`oi-${i}`} cx={toSvgX(p.x, xMin, xMax)} cy={toSvgY(p.y)} r={3} fill="#0000cc" />)}
-        {hasMasked && ptsODm.map((p, i) => <Circle key={`odm-${i}`} cx={toSvgX(p.x, xMin, xMax)} cy={toSvgY(p.y)} r={2.4} fill="#cc0000" />)}
-        {hasMasked && ptsOIm.map((p, i) => <Circle key={`oim-${i}`} cx={toSvgX(p.x, xMin, xMax)} cy={toSvgY(p.y)} r={2.4} fill="#0000cc" />)}
+        {ptsOD.map((p, i) => <Circle key={`od-${i}`} cx={toSvgX(p.x, xMin, xMax)} cy={toSvgY(p.y)} r={3.5} fill="none" stroke="#d11c1c" strokeWidth={1.4} />)}
+        {ptsOI.map((p, i) => (
+          <G key={`oi-${i}`}>
+            <Line x1={toSvgX(p.x, xMin, xMax) - 3.5} y1={toSvgY(p.y) - 3.5} x2={toSvgX(p.x, xMin, xMax) + 3.5} y2={toSvgY(p.y) + 3.5} stroke="#1452d1" strokeWidth={1.4} />
+            <Line x1={toSvgX(p.x, xMin, xMax) + 3.5} y1={toSvgY(p.y) - 3.5} x2={toSvgX(p.x, xMin, xMax) - 3.5} y2={toSvgY(p.y) + 3.5} stroke="#1452d1" strokeWidth={1.4} />
+          </G>
+        ))}
+        {hasMasked && ptsODm.map((p, i) => <Circle key={`odm-${i}`} cx={toSvgX(p.x, xMin, xMax)} cy={toSvgY(p.y)} r={3.5} fill="none" stroke="#d11c1c" strokeWidth={1.4} />)}
+        {hasMasked && ptsOIm.map((p, i) => (
+          <G key={`oim-${i}`}>
+            <Line x1={toSvgX(p.x, xMin, xMax) - 3.5} y1={toSvgY(p.y) - 3.5} x2={toSvgX(p.x, xMin, xMax) + 3.5} y2={toSvgY(p.y) + 3.5} stroke="#1452d1" strokeWidth={1.4} />
+            <Line x1={toSvgX(p.x, xMin, xMax) + 3.5} y1={toSvgY(p.y) - 3.5} x2={toSvgX(p.x, xMin, xMax) - 3.5} y2={toSvgY(p.y) + 3.5} stroke="#1452d1" strokeWidth={1.4} />
+          </G>
+        ))}
 
         {xTickValues.map(x => (
           <G key={`xt-${x}`}>
             <Line x1={toSvgX(x, xMin, xMax)} y1={PAD.top + PLOT_H} x2={toSvgX(x, xMin, xMax)} y2={PAD.top + PLOT_H + 4} stroke="#555" strokeWidth={0.6} />
-            <Text x={toSvgX(x, xMin, xMax)} y={PAD.top + PLOT_H + 12} style={{ fontSize: 6, textAnchor: 'middle', fill: '#444' }}>{x}</Text>
+            <Text x={toSvgX(x, xMin, xMax)} y={PAD.top + PLOT_H + 14} textAnchor="middle" style={{ fontSize: 7, fill: '#444' }}>{x}</Text>
           </G>
         ))}
-        <Text x={PAD.left + PLOT_W / 2} y={VH - 6} style={{ fontSize: 7, textAnchor: 'middle', fill: '#444' }}>Intensidad (dB)</Text>
+        <Text x={PAD.left + PLOT_W / 2} y={VH - 8} textAnchor="middle" style={{ fontSize: 8, fill: '#444' }}>Intensidad (dB HTL)</Text>
 
         {Y_TICKS.filter((_, i) => i % 2 === 0).map(y => (
           <G key={`yt-${y}`}>
             <Line x1={PAD.left - 4} y1={toSvgY(y)} x2={PAD.left} y2={toSvgY(y)} stroke="#555" strokeWidth={0.6} />
-            <Text x={PAD.left - 6} y={toSvgY(y) + 2} style={{ fontSize: 6, textAnchor: 'end', fill: '#444' }}>{y}</Text>
+            <Text x={PAD.left - 6} y={toSvgY(y) + 2} textAnchor="end" style={{ fontSize: 7, fill: '#444' }}>{y}</Text>
           </G>
         ))}
-        <Text x={10} y={PAD.top + PLOT_H / 2} style={{ fontSize: 7, textAnchor: 'middle', fill: '#444' }}>Discriminación (%)</Text>
       </Svg>
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <Svg width={24} height={8}><Line x1={0} y1={4} x2={24} y2={4} stroke="#cc0000" strokeWidth={2} /></Svg>
+          <Svg width={24} height={8}><Line x1={0} y1={4} x2={24} y2={4} stroke="#d11c1c" strokeWidth={2} /></Svg>
           <Text style={styles.legendText}>OD (Oído Derecho)</Text>
         </View>
         <View style={styles.legendItem}>
-          <Svg width={24} height={8}><Line x1={0} y1={4} x2={24} y2={4} stroke="#0000cc" strokeWidth={2} /></Svg>
+          <Svg width={24} height={8}><Line x1={0} y1={4} x2={24} y2={4} stroke="#1452d1" strokeWidth={2} /></Svg>
           <Text style={styles.legendText}>OI (Oído Izquierdo)</Text>
         </View>
         {hasMasked && (
           <>
             <View style={styles.legendItem}>
-              <Svg width={24} height={8}><Line x1={0} y1={4} x2={24} y2={4} stroke="#cc0000" strokeWidth={1.6} strokeDasharray="3,2" /></Svg>
+              <Svg width={24} height={8}><Line x1={0} y1={4} x2={24} y2={4} stroke="#d11c1c" strokeWidth={1.6} strokeDasharray="3,2" /></Svg>
               <Text style={styles.legendText}>OD Enmasc.</Text>
             </View>
             <View style={styles.legendItem}>
-              <Svg width={24} height={8}><Line x1={0} y1={4} x2={24} y2={4} stroke="#0000cc" strokeWidth={1.6} strokeDasharray="3,2" /></Svg>
+              <Svg width={24} height={8}><Line x1={0} y1={4} x2={24} y2={4} stroke="#1452d1" strokeWidth={1.6} strokeDasharray="3,2" /></Svg>
               <Text style={styles.legendText}>OI Enmasc.</Text>
             </View>
           </>

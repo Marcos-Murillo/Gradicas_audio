@@ -6,15 +6,16 @@ import { firebaseService } from "@/lib/firebase-service"
 import type { EvaluacionAuditiva } from "@/types/evaluation"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { ConsolidatedReport } from "@/components/consolidated-report"
 import { pdfExportService } from "@/lib/pdf-export"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Search, Eye, Edit, Trash2, ArrowLeft, Loader2, FileText, Stethoscope, Ear } from "lucide-react"
+import { Search, Eye, Edit, Trash2, ArrowLeft, Loader2, FileText, Stethoscope, Ear, Download } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { SectionBanner } from "@/components/clinic-ui"
 
 /**
  * Página de evaluaciones guardadas
@@ -41,6 +42,7 @@ export default function SavedEvaluationsPage() {
   const [evaluationToDelete, setEvaluationToDelete] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
 
   // Cargar evaluaciones al montar el componente
   useEffect(() => {
@@ -129,6 +131,30 @@ export default function SavedEvaluationsPage() {
     setEvaluationToDelete(null)
   }
 
+  const handleDownload = async (evaluation: EvaluacionAuditiva) => {
+    if (!evaluation.id || downloadingId) return
+    try {
+      setDownloadingId(evaluation.id)
+      toast({
+        title: "Generando PDF",
+        description: "Por favor espere mientras se genera el documento...",
+      })
+      await pdfExportService.exportEvaluationToPDF(evaluation)
+      toast({
+        title: "PDF generado exitosamente",
+        description: "El archivo se ha descargado correctamente.",
+      })
+    } catch (error) {
+      console.error("Error exporting PDF:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo generar el PDF. Por favor intente nuevamente.",
+      })
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
   const handleExportPDF = async () => {
     if (!selectedEvaluation) return
 
@@ -157,7 +183,7 @@ export default function SavedEvaluationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8">
+    <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <Card>
@@ -173,9 +199,7 @@ export default function SavedEvaluationsPage() {
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <div>
-                  <CardTitle className="text-2xl font-bold">
-                    Evaluaciones Guardadas
-                  </CardTitle>
+                  <SectionBanner>Evaluaciones Guardadas</SectionBanner>
                   <p className="text-sm text-muted-foreground mt-1">
                     Gestiona y consulta las evaluaciones auditivas almacenadas
                   </p>
@@ -211,7 +235,7 @@ export default function SavedEvaluationsPage() {
         {loading ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
               <p className="text-muted-foreground">Cargando evaluaciones...</p>
             </CardContent>
           </Card>
@@ -240,6 +264,8 @@ export default function SavedEvaluationsPage() {
                 onView={() => handleView(evaluation)}
                 onEdit={() => handleEdit(evaluation)}
                 onDelete={() => handleDeleteClick(evaluation.id!)}
+                onDownload={() => handleDownload(evaluation)}
+                downloading={downloadingId === evaluation.id}
               />
             ))}
           </div>
@@ -266,7 +292,7 @@ export default function SavedEvaluationsPage() {
           {exporting && (
             <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 flex items-center justify-center z-50">
               <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="text-sm font-medium">Generando PDF...</p>
               </div>
             </div>
@@ -322,6 +348,8 @@ interface EvaluationCardProps {
   onView: () => void
   onEdit: () => void
   onDelete: () => void
+  onDownload: () => void
+  downloading?: boolean
 }
 
 function EvaluationCard({
@@ -329,6 +357,8 @@ function EvaluationCard({
   onView,
   onEdit,
   onDelete,
+  onDownload,
+  downloading = false,
 }: EvaluationCardProps) {
   const { paciente, fechaExamen, pruebas } = evaluation
 
@@ -356,7 +386,7 @@ function EvaluationCard({
           {/* Patient Info */}
           <div className="flex-1 space-y-3">
             <div>
-              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+              <h3 className="text-lg font-extrabold text-navy">
                 {paciente.apellido}, {paciente.nombre}
               </h3>
               <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
@@ -372,7 +402,7 @@ function EvaluationCard({
                   <Badge
                     key={index}
                     variant="secondary"
-                    className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 flex items-center gap-1.5"
+                    className="flex items-center gap-1.5 bg-banner/10 text-banner"
                   >
                     <Icon className="h-3 w-3" />
                     {info.nombre}
@@ -384,6 +414,16 @@ function EvaluationCard({
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDownload}
+              disabled={downloading}
+              className="flex items-center gap-2 border-green-600 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-500 dark:text-green-400 dark:hover:bg-green-950"
+            >
+              {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Descargar
+            </Button>
             <Button
               variant="outline"
               size="sm"

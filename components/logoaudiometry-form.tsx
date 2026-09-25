@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EarTitle } from "@/components/clinic-ui";
 import { Input } from "@/components/ui/input";
 import { logoaudiometriaSchema } from "@/lib/validation-schemas";
 import { LogoaudiometryChartUI } from "@/components/logoaudiometry-chart-ui";
@@ -53,7 +54,7 @@ function EarTable({ label, color, puntos, onChange }: EarTableProps) {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold" style={{ color }}>{label}</h3>
+      <EarTitle ear={color === "#d11c1c" ? "od" : "oi"}>{label}</EarTitle>
 
       {/* Table */}
       {puntos.length > 0 && (
@@ -212,14 +213,14 @@ export function LogoaudiometryForm({ onSubmit, initialData }: LogoaudiometryForm
 
       <EarTable
         label="Oído Derecho (OD)"
-        color="#dc2626"
+        color="#d11c1c"
         puntos={puntosOD}
         onChange={handleODChange}
       />
 
       <EarTable
         label="Oído Izquierdo (OI)"
-        color="#2563eb"
+        color="#1452d1"
         puntos={puntosOI}
         onChange={handleOIChange}
       />
